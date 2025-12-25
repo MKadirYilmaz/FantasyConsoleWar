@@ -48,7 +48,7 @@ public class PlayerCamera
 
             Console.SetCursorPosition(sx * 2, sy);
             Console.ForegroundColor = p.Color;
-            Console.Write(p.Emoji);
+            Console.Write(p.Visual);
             Console.ResetColor();
         }
     }

@@ -2,9 +2,9 @@
 
 public class Player
 {
-    public string Id { get; set; }
+    public int Id { get; set; }
     public string Name { get; set; }
-    public string Emoji { get; set; }
+    public string Visual { get; set; }
     public Location Position { get; set; }
     public int Health { get; set; } = 100;
     public ConsoleColor Color { get; set; }

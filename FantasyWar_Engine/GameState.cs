@@ -2,13 +2,16 @@
 
 public class GameState
 {
-    public static Dictionary<string, Player> Players = new Dictionary<string, Player>();
+    public static Dictionary<int, Player> Players = new();
     
-    public static void UpdatePlayer(string id, int newX, int newY)
+    public static void UpdatePlayer(int id, int newX, int newY)
     {
         if (Players.ContainsKey(id))
         {
-            Players[id].Position = new Location(newX, newY);
+            Players.TryGetValue(id, out Player? currPlayer);
+            if (currPlayer == null) return;
+
+            currPlayer.Position = new Location(newX, newY);
         }
     }
 }

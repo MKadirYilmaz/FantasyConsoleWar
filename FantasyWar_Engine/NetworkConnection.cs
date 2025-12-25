@@ -1,60 +1,8 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Text.Json;
 
 namespace FantasyWar_Engine;
-
-public class NetworkConnection
-{
-    private readonly TcpClient _client;
-    private readonly NetworkStream _steam = new NetworkStream(new Socket(SocketType.Stream, ProtocolType.Tcp));
-
-    public async Task SendPacketAsync(NetworkPacket packet) {
-        byte[] jsonBytes = Encoding.UTF8.GetBytes(NetworkPacket.ToJson(packet));
-        byte[] lengthPrefix = BitConverter.GetBytes(jsonBytes.Length); // 4 byte header
-
-        byte[] finalPacket = new byte[4 + jsonBytes.Length];
-        Buffer.BlockCopy(lengthPrefix, 0, finalPacket, 0, 4);
-        Buffer.BlockCopy(jsonBytes, 0, finalPacket, 4, jsonBytes.Length);
-
-        await _steam.WriteAsync(finalPacket, 0, finalPacket.Length);
-    }
-
-    public async Task ReceiveLoopAsync() {
-        byte[] sizeBuffer = new byte[4];
-        while (true) {
-            // Önce 4 byte oku (Header)
-            int read = await _steam.ReadAsync(sizeBuffer, 0, 4);
-            if (read == 0) break; // Bağlantı koptu
-
-            int packetSize = BitConverter.ToInt32(sizeBuffer, 0);
-            byte[] packetBuffer = new byte[packetSize];
-
-            // Sonra belirtilen uzunluk kadar oku (Body)
-            int bytesRead = 0;
-            while (bytesRead < packetSize) {
-                bytesRead += await _steam.ReadAsync(packetBuffer, bytesRead, packetSize - bytesRead);
-            }
-
-            string json = Encoding.UTF8.GetString(packetBuffer);
-            
-            using JsonDocument doc = JsonDocument.Parse(json);
-            PacketType type = (PacketType)doc.RootElement.GetProperty("Type").GetByte();
-
-            switch (type) {
-                case PacketType.Movement:
-                    var posData = JsonSerializer.Deserialize<MovementPacket>(json);
-                    // Handle movement
-                    break;
-                case PacketType.Chat:
-                    var chatData = JsonSerializer.Deserialize<ChatPacket>(json);
-                    // Handle chat
-                    break;
-            }
-        }
-    }
-}
 
 public class TcpConnection
 {
@@ -79,7 +27,7 @@ public class TcpConnection
         {
             try
             {
-                string line = await _reader.ReadLineAsync();
+                string? line = await _reader.ReadLineAsync();
                 if (line == null)
                 {
                     Console.WriteLine("Connection closed.");
@@ -91,7 +39,6 @@ public class TcpConnection
                 if (packet != null)
                 {
                     OnPacketReceived?.Invoke(packet);
-                    Console.WriteLine("OnPacketReceived invoked.");
                 }
                 else
                 {
@@ -101,9 +48,8 @@ public class TcpConnection
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
+                break;
             }
-            
-
         }
     }
 
@@ -111,24 +57,105 @@ public class TcpConnection
     {
         string json = NetworkPacket.ToJson(packet);
         _writer.WriteLine(json);
-        Console.WriteLine("Message sent.");
     }
 }
 
 public class UdpBroadcaster
 {
-    private UdpClient _udpClient = new UdpClient();
-    private IPEndPoint _remoteEndPoint;
+    private readonly UdpClient _udpClient;
+    private readonly IPEndPoint _broadcastEndPoint;
+    private bool _disposed = false;
     
-    public UdpBroadcaster(string ip, int port)
+
+    public UdpBroadcaster(int port)
     {
-        _remoteEndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
+        _udpClient = new UdpClient();
+        _udpClient.EnableBroadcast = true;
+        _broadcastEndPoint = new IPEndPoint(IPAddress.Broadcast, port);
+        
+        Console.WriteLine($"UDP Broadcaster initialized on port {port}");
     }
 
-    public void SendState(string stateJson)
+    public async Task BroadcastStateAsync(NetworkPacket packet)
     {
-        byte[] data = Encoding.UTF8.GetBytes(stateJson);
-        _udpClient.Send(data, data.Length, _remoteEndPoint);
+        if (_disposed) return;
+        try
+        {
+            string json = NetworkPacket.ToJson(packet);
+            byte[] data = Encoding.UTF8.GetBytes(json);
+            
+            await _udpClient.SendAsync(data, data.Length, _broadcastEndPoint);
+            Console.WriteLine($"Broadcasted: {packet.PacketType} ({data.Length} bytes)");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Broadcast error: {ex.Message}");
+            Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        _disposed = true;
+        _udpClient?.Dispose();
+    }
+}
+
+public class UdpListener
+{
+    private readonly UdpClient _udpClient;
+    private readonly CancellationTokenSource _cts;
+
+    public event Action<NetworkPacket?>? OnPacketReceived;
+
+    public UdpListener(int port)
+    {
+        Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+        socket.Bind(new IPEndPoint(IPAddress.Any, port));
+        
+        _udpClient = new UdpClient { Client = socket };
+        _udpClient.EnableBroadcast = true;
+        _cts = new CancellationTokenSource();
+        
+        Console.WriteLine($"UDP Listener started on port {port}");
+        Task.Run(() => ListenAsync(_cts.Token));
+    }
+
+    private async Task ListenAsync(CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested)
+        {
+            try
+            {
+                UdpReceiveResult result = await _udpClient.ReceiveAsync(ct);
+                string json = Encoding.UTF8.GetString(result.Buffer);
+                
+                Console.WriteLine($"Received UDP from {result.RemoteEndPoint}: {json}");
+
+                NetworkPacket? packet = NetworkPacket.FromJson(json);
+                OnPacketReceived?.Invoke(packet);
+            }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine("UDP Listener stopped.");
+                Dispose();
+                break;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"UDP Listen error: {ex.Message}");
+                Dispose();
+                break;
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _udpClient?.Dispose();
+        _cts?.Dispose();
     }
 }
 

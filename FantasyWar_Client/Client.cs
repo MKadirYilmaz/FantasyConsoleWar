@@ -1,14 +1,21 @@
-﻿using System.Net;
-using System.Net.Sockets;
-using System.Text;
-using System.Text.Json;
+﻿using System.Net.Sockets;
 using FantasyWar_Engine;
 
 namespace FantasyWar_Client;
 
 public class Client
 {
+    public TcpGameClient TcpClient;
+    public UdpGameClient UdpClient;
     
+    public Client(string serverTcpIp, int serverTcpPort,  int listenUdpPort)
+    {
+        TcpClient = new TcpGameClient();
+        TcpClient.Connect(serverTcpIp, serverTcpPort);
+        
+        UdpClient = new UdpGameClient();
+        UdpClient.Start(listenUdpPort);
+    }
 }
 
 public class TcpGameClient
@@ -29,33 +36,42 @@ public class TcpGameClient
     private void HandlePacket(NetworkPacket packet)
     {
         Console.WriteLine($"Received: {packet.GetType().Name}");
-        // Handle incoming packets
+
+        switch (packet.PacketType)
+        {
+            case PacketType.Login:
+                LoginPacket loginPacket = (LoginPacket)packet;
+                InitializePlayerInformation(loginPacket);
+                break;
+            default:
+                break;
+        }
     }
     
     public void SendPacket(NetworkPacket packet)
     {
         _connection.Send(packet);
     }
+
+    private void InitializePlayerInformation(LoginPacket loginPacket)
+    {
+        Console.WriteLine($"Player Name: {loginPacket.PlayerName}, Player ID: {loginPacket.PlayerId}");
+    }
 }
 
-public class UdpListener
+public class UdpGameClient
 {
-    private UdpClient _udpClient;
-
-    public UdpListener(int port)
+    private UdpListener _listener;
+    
+    public void Start(int port)
     {
-        _udpClient = new UdpClient(port);
-        Task.Run(Listen);
+        _listener = new UdpListener(port);
+        _listener.OnPacketReceived += HandlePacket;
     }
-
-    private async Task Listen()
+    private void HandlePacket(NetworkPacket? packet)
     {
-        while (true)
-        {
-            UdpReceiveResult result = await _udpClient.ReceiveAsync();
-            string stateJson = Encoding.UTF8.GetString(result.Buffer);
-            Console.WriteLine($"Received state: {stateJson}");
-            // Process game state
-        }
+        if(packet == null) return;
+        Console.WriteLine($"Received UDP: {packet.GetType().Name}");
+        // Handle incoming UDP packets
     }
 }

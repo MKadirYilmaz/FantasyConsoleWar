@@ -1,8 +1,7 @@
 ﻿using FantasyWar_Client;
 using FantasyWar_Engine;
 
-TcpGameClient gameClient = new TcpGameClient();
-gameClient.Connect("127.0.0.1", 5000);
+Client client = new Client("127.0.0.1", 5000, 5001);
 
 while (true)
 {
@@ -10,6 +9,6 @@ while (true)
     if (message != null)
     {
         ChatPacket messagePacket = new ChatPacket(message, 1);
-        gameClient.SendPacket(messagePacket);
+        client.TcpClient.SendPacket(messagePacket);
     }
 }
