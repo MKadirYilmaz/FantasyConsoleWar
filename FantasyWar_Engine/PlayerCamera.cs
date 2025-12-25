@@ -36,8 +36,7 @@ public class PlayerCamera
                 }
             }
         }
-
-        // 2\) Overlay players
+        
         foreach (var p in players)
         {
             int sx = p.Position.X - offsetX;

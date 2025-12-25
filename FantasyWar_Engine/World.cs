@@ -1,17 +1,35 @@
-﻿namespace FantasyWar_Engine;
+﻿using System.Collections.Concurrent;
+
+namespace FantasyWar_Engine;
 
 public class World
 {
     public int Width { get; }
     public int Height { get; }
     public char[,] Grid { get; }
+    
+    public ConcurrentDictionary<int, Player> Players = new();
 
+    public int LocalPlayerId { get; set; } = -1;
+    
     public World(int width, int height)
     {
         Width = width;
         Height = height;
         Grid = new char[width, height];
         GenerateSimpleMap();
+    }
+
+    public void AddOrUpdatePlayer(int id, Player player)
+    {
+        if (Players.ContainsKey(id)) Players[id] = player;
+        else Players.TryAdd(id, player);
+    }
+
+    public Player? GetPlayer(int id)
+    {
+        if(Players.TryGetValue(id, out var player)) return player;
+        return null;
     }
 
     private void GenerateSimpleMap()

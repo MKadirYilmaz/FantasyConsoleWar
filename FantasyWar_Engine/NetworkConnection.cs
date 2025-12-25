@@ -11,6 +11,7 @@ public class TcpConnection
     private StreamWriter _writer;
     
     public event Action<NetworkPacket> OnPacketReceived;
+    public event Action<TcpConnection> OnDisconnect;
     
     public TcpConnection(TcpClient client)
     {
@@ -33,8 +34,6 @@ public class TcpConnection
                     Console.WriteLine("Connection closed.");
                     break;
                 }
-
-                Console.WriteLine(line);
                 NetworkPacket? packet = NetworkPacket.FromJson(line);
                 if (packet != null)
                 {
@@ -51,12 +50,34 @@ public class TcpConnection
                 break;
             }
         }
+        Disconnect();
     }
 
     public void Send(NetworkPacket packet)
     {
-        string json = NetworkPacket.ToJson(packet);
-        _writer.WriteLine(json);
+        try
+        {
+            string json = NetworkPacket.ToJson(packet);
+            _writer.WriteLine(json);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            Disconnect();
+        }
+    }
+    
+    private void Disconnect()
+    {
+        try
+        {
+            OnDisconnect?.Invoke(this);
+            _client.Close();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
     }
 }
 

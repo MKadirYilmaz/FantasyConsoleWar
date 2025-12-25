@@ -2,20 +2,32 @@
 using FantasyWar_Engine;
 
 
-
-World fantasyWorld = new World(100, 100);
-
-Server server = new Server();
-server.Start(5000, 5001);
-
-while (true)
+class Program
 {
-    ChatPacket packet = new ChatPacket("Server broadcast message", 0);
-    server.UdpServer?.BroadcastPacket(packet);
-    
-    Thread.Sleep(5000);
-}
+    static void Main(string[] args)
+    {
+        World serverWorld = new World(100, 100);
+        
+        ServerPackageManager serverPackageManager = new ServerPackageManager();
+        Server server = new Server();
+        server.Start(5000, 5001, serverPackageManager, serverWorld);
+        
+        Console.WriteLine("Server started on port 5000 and UDP target port 5001.");
 
+        while (true)
+        {
+            serverPackageManager.ProcessPackets(serverWorld);
+
+            foreach (Player player in serverWorld.Players.Values)
+            {
+                MovementPacket moveUpdate = new MovementPacket(player.Position, player.Id);
+                server.TcpServer?.BroadcastPacket(moveUpdate);
+                
+            }
+            Thread.Sleep(20); // 50 FPS
+        }
+    }
+}
 
 
 

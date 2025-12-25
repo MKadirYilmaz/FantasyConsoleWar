@@ -8,13 +8,13 @@ public class Client
     public TcpGameClient TcpClient;
     public UdpGameClient UdpClient;
     
-    public Client(string serverTcpIp, int serverTcpPort,  int listenUdpPort)
+    public Client(string serverTcpIp, int serverTcpPort,  int listenUdpPort, ClientPackageHandler packageHandler)
     {
         TcpClient = new TcpGameClient();
-        TcpClient.Connect(serverTcpIp, serverTcpPort);
+        TcpClient.Connect(serverTcpIp, serverTcpPort, packageHandler);
         
         UdpClient = new UdpGameClient();
-        UdpClient.Start(listenUdpPort);
+        UdpClient.Start(listenUdpPort, packageHandler);
     }
 }
 
@@ -22,7 +22,7 @@ public class TcpGameClient
 {
     private TcpConnection? _connection;
 
-    public void Connect(string ip, int port)
+    public void Connect(string ip, int port, ClientPackageHandler packageHandler)
     {
         TcpClient client = new TcpClient();
         client.Connect(ip, port);
@@ -30,7 +30,8 @@ public class TcpGameClient
         Console.WriteLine($"Connected to {client.Client.RemoteEndPoint}");
         
         _connection = new TcpConnection(client);
-        _connection.OnPacketReceived += ClientPackageHandler.HandlePacket;
+        
+        _connection.OnPacketReceived += packageHandler.OnDataReceived;
     }
     
     
@@ -45,9 +46,9 @@ public class UdpGameClient
 {
     private UdpListener? _listener;
     
-    public void Start(int port)
+    public void Start(int port, ClientPackageHandler packageHandler)
     {
         _listener = new UdpListener(port);
-        _listener.OnPacketReceived += ClientPackageHandler.HandlePacket;
+        _listener.OnPacketReceived += packageHandler.OnDataReceived;
     }
 }

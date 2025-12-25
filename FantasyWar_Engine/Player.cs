@@ -5,14 +5,39 @@ public class Player
     public int Id { get; set; }
     public string Name { get; set; }
     public string Visual { get; set; }
-    public Location Position { get; set; }
+    
     public int Health { get; set; } = 100;
+    
+    public Location Position { get; set; }
     public ConsoleColor Color { get; set; }
+    
+    public bool IsLocalPlayer { get; set; } = false;
 
+    public Player(int id, string name)
+    {
+        Id = id;
+        Name = name;
+        Visual = "😀";
+        Position = new Location(0, 0);
+        Color = ConsoleColor.White;
+    }
 
     public bool AddActionPosition(Location vector, World world)
     {
         Location newPosition = Position + vector;
+        if (world.IsWalkable(newPosition.X, newPosition.Y))
+        {
+            Position = newPosition;
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    
+    public bool SetActionPosition(Location newPosition, World world)
+    {
         if (world.IsWalkable(newPosition.X, newPosition.Y))
         {
             Position = newPosition;

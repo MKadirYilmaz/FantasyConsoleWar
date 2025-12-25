@@ -1,54 +1,125 @@
-﻿using FantasyWar_Engine;
+﻿using System.Collections.Concurrent;
+using FantasyWar_Engine;
 
 namespace FantasyWar_Client;
 
 public class ClientPackageHandler
 {
-    public static void HandlePacket(NetworkPacket? packet)
+    private ConcurrentQueue<NetworkPacket> _packetQueue = new ConcurrentQueue<NetworkPacket>();
+    
+    public void OnDataReceived(NetworkPacket? packet)
+    {
+        if(packet != null)
+            _packetQueue.Enqueue(packet);
+    }
+    
+    public void ProcessPackets(World world)
+    {
+        while (_packetQueue.TryDequeue(out var packet))
+        {
+            HandlePacket(packet, world);
+        }
+    }
+    
+    private void HandlePacket(NetworkPacket? packet, World world)
     {
         if (packet == null) return;
-        Console.WriteLine($"Received: {packet.GetType().Name}");
+        //Console.WriteLine($"Received: {packet.GetType().Name}");
 
         switch (packet.PacketType)
         {
             case PacketType.Login:
                 LoginPacket loginPacket = (LoginPacket)packet;
-                InitializePlayerInformation(loginPacket);
+                HandleLogin(loginPacket, world);
                 break;
             case PacketType.Movement:
                 MovementPacket movementPacket = (MovementPacket)packet;
-                UpdatePlayerPosition(movementPacket);
+                HandleMovement(movementPacket, world);
                 break;
             case PacketType.Chat:
                 ChatPacket chatPacket = (ChatPacket)packet;
-                DisplayChatMessage(chatPacket);
+                HandleChat(chatPacket, world);
+                break;
+            case PacketType.WorldState:
+                WorldPacket worldPacket = (WorldPacket)packet;
+                HandleWorldStateUpdate(worldPacket, world);
                 break;
         }
     }
     
-    public static void InitializePlayerInformation(LoginPacket loginPacket)
-    {
-        Console.WriteLine($"Player Name: {loginPacket.PlayerName}, Player ID: {loginPacket.PlayerId}");
-        
-        
-        PlayerController.LocalPlayer.Id = loginPacket.PlayerId;
-    }
     
-    public static void UpdatePlayerPosition(MovementPacket movementPacket)
+    private void HandleLogin(LoginPacket packet, World world)
     {
-        Console.WriteLine($"Player ID: {movementPacket.PlayerId} moved to {movementPacket.MovementVector}");
+        Console.WriteLine($"[Login] Player: {packet.PlayerName}, ID: {packet.PlayerId}");
+
         
-        if (PlayerController.LocalPlayer != null && PlayerController.LocalPlayer.Id == movementPacket.PlayerId)
+        var newPlayer = new Player(packet.PlayerId, packet.PlayerName);
+        
+        if (world.LocalPlayerId == -1)
         {
-            PlayerController.LocalPlayer.AddActionPosition(movementPacket.MovementVector, GameState.GameWorld);
+            world.LocalPlayerId = packet.PlayerId;
+            newPlayer.IsLocalPlayer = true;
+            Console.WriteLine("-> This is ME!");
+        }
+        
+        world.AddOrUpdatePlayer(packet.PlayerId, newPlayer);
+    }
+
+    private void HandleWorldStateUpdate(WorldPacket packet, World world)
+    {
+        foreach(var kvp in packet.Players)
+        {
+            int playerId = kvp.Key;
+            Player incomingPlayer = kvp.Value;
+            
+            var existingPlayer = world.GetPlayer(playerId);
+            if (existingPlayer == null)
+            {
+                if (playerId == world.LocalPlayerId)
+                {
+                    incomingPlayer.IsLocalPlayer = true;
+                }
+                world.AddOrUpdatePlayer(playerId, incomingPlayer);
+                Console.WriteLine("[System] Player synced: " + incomingPlayer.Name);
+            }
+        }
+
+        foreach (var kvp in world.Players)
+        {
+            int id = kvp.Key;
+            
+            if (!packet.Players.ContainsKey(id))
+            {
+                world.Players.TryRemove(id, out _);
+                Console.WriteLine("[System] Player removed: " + kvp.Value.Name);
+            }
         }
     }
-    
-    public static void DisplayChatMessage(ChatPacket chatPacket)
+
+    private void HandleMovement(MovementPacket packet, World world)
     {
-        if (chatPacket.PlayerId == PlayerController.LocalPlayer.Id) return;
-        
-        Console.WriteLine($"Player ID: {chatPacket.PlayerId} says: {chatPacket.Message}");
+        // Dünyadan oyuncuyu bul
+        var player = world.GetPlayer(packet.PlayerId);
+
+        if (player != null)
+        {
+            
+            player.Position = packet.MovementVector;
+            
+            // Console.WriteLine($"Player {player.Name} moved to {player.Position}");
+        }
+        else
+        {
+            Console.WriteLine($"[Warning] Received move for unknown player: {packet.PlayerId}");
+        }
+    }
+
+    private void HandleChat(ChatPacket packet, World world)
+    {
+        var player = world.GetPlayer(packet.PlayerId);
+        string name = player != null ? player.Name : "Unknown";
+
+        Console.WriteLine($"[Chat] {name}: {packet.Message}");
     }
     
     

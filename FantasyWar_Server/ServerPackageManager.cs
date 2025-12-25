@@ -1,62 +1,55 @@
-﻿using FantasyWar_Engine;
+﻿using System.Collections.Concurrent;
+using FantasyWar_Engine;
 
 namespace FantasyWar_Server;
 
 public class ServerPackageManager
 {
-    public static void HandlePacket(NetworkPacket? packet)
+    private ConcurrentQueue<NetworkPacket> _packetQueue = new ConcurrentQueue<NetworkPacket>();
+    
+    public void OnDataReceived(NetworkPacket? packet)
+    {
+        if(packet != null)
+            _packetQueue.Enqueue(packet);
+    }
+    
+    public void ProcessPackets(World world)
+    {
+        while (_packetQueue.TryDequeue(out var packet))
+        {
+            HandlePacket(packet, world);
+        }
+    }
+    
+    private void HandlePacket(NetworkPacket? packet, World world)
     {
         if (packet == null) return;
         
-        Console.WriteLine($"Received: {packet.GetType().Name}");
+        //Console.WriteLine($"Received: {packet.GetType().Name}");
 
         switch (packet.PacketType)
         {
             case PacketType.Login:
                 LoginPacket loginPacket = (LoginPacket)packet;
-                InitializePlayerInformation(loginPacket);
+                //InitializePlayerInformation(loginPacket);
                 break;
             case PacketType.Movement:
                 MovementPacket movementPacket = (MovementPacket)packet;
-                UpdatePlayerPosition(movementPacket);
+                HandleMovement(movementPacket, world);
                 break;
             case PacketType.Chat:
                 ChatPacket chatPacket = (ChatPacket)packet;
-                DisplayChatMessage(chatPacket);
+                //DisplayChatMessage(chatPacket);
                 break;
         }
     }
-    
-    private static void InitializePlayerInformation(LoginPacket loginPacket)
-    {
-        Console.WriteLine($"New Player Wants It's Name To Be: {loginPacket.PlayerName}");
-        Player newPlayer = new Player();
-        int id = GameState.Players.Count;
-        newPlayer.Id = id;
-        newPlayer.Name = loginPacket.PlayerName;
-        
-        GameState.Players.Add(newPlayer.Id, newPlayer);
-        // Here you would normally send back a confirmation packet to all clients (GameState update)
 
-    }
-    
-    private static void UpdatePlayerPosition(MovementPacket movementPacket)
+    private void HandleMovement(MovementPacket packet, World world)
     {
-        Console.WriteLine($"Player ID: {movementPacket.PlayerId} wants to move to {movementPacket.MovementVector}");
-        
-        bool bCanMove = GameState.Players[movementPacket.PlayerId].AddActionPosition(movementPacket.MovementVector, GameState.GameWorld);
-        if (bCanMove)
+        Player? player = world.GetPlayer(packet.PlayerId);
+        if (player != null)
         {
-            // Here you would normally broadcast the updated position to all clients (GameState update)
+            player.Position = packet.MovementVector;
         }
     }
-    
-    private static void DisplayChatMessage(ChatPacket chatPacket)
-    {
-        Console.WriteLine($"Player ID: {chatPacket.PlayerId} wants to say: {chatPacket.Message}");
-        
-        // Here you would normally broadcast the chat message to all clients
-        
-    }
-
 }

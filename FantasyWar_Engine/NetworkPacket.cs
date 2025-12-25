@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Collections.Concurrent;
+using System.Text.Json;
 
 namespace FantasyWar_Engine;
 
@@ -6,7 +7,8 @@ public enum PacketType : byte
 {
     Login = 1,
     Movement = 2,
-    Chat = 3
+    Chat = 3,
+    WorldState = 4
 }
 
 public abstract class NetworkPacket
@@ -24,6 +26,7 @@ public abstract class NetworkPacket
             PacketType.Login => JsonSerializer.Deserialize<LoginPacket>(json),
             PacketType.Movement => JsonSerializer.Deserialize<MovementPacket>(json),
             PacketType.Chat => JsonSerializer.Deserialize<ChatPacket>(json),
+            PacketType.WorldState => JsonSerializer.Deserialize<WorldPacket>(json),
             _ => null
         };
     }
@@ -67,5 +70,16 @@ public class ChatPacket : NetworkPacket
     {
         PacketType = PacketType.Chat;
         Message = "";
+    }
+}
+
+public class WorldPacket : NetworkPacket
+{
+    public ConcurrentDictionary<int, Player> Players { get; set; }
+
+    public WorldPacket(ConcurrentDictionary<int, Player> players)
+    {
+        PacketType = PacketType.WorldState;
+        Players = players;
     }
 }
