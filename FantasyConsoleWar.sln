@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FantasyWar_Engine", "FantasyWar_Engine\FantasyWar_Engine.csproj", "{463566A2-0DDE-4122-9709-D5D7823A68BF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FantasyWar_Server", "FantasyWar_Server\FantasyWar_Server.csproj", "{A98A1EBD-DFFC-4E93-AA29-D101D4377E7E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FantasyWar_Client", "FantasyWar_Client\FantasyWar_Client.csproj", "{D2E8A2F5-1E85-4D23-86F3-BBE1DE86D0C9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{463566A2-0DDE-4122-9709-D5D7823A68BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{463566A2-0DDE-4122-9709-D5D7823A68BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{463566A2-0DDE-4122-9709-D5D7823A68BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{463566A2-0DDE-4122-9709-D5D7823A68BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A98A1EBD-DFFC-4E93-AA29-D101D4377E7E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A98A1EBD-DFFC-4E93-AA29-D101D4377E7E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A98A1EBD-DFFC-4E93-AA29-D101D4377E7E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A98A1EBD-DFFC-4E93-AA29-D101D4377E7E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D2E8A2F5-1E85-4D23-86F3-BBE1DE86D0C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D2E8A2F5-1E85-4D23-86F3-BBE1DE86D0C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D2E8A2F5-1E85-4D23-86F3-BBE1DE86D0C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D2E8A2F5-1E85-4D23-86F3-BBE1DE86D0C9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

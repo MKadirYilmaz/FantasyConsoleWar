@@ -1,0 +1,12 @@
+
+[Bb]in/
+[Oo]bj/
+
+*.exe
+*.dll
+*.pdb
+*.lib
+*.msi
+
+.idea/
+.vs/
