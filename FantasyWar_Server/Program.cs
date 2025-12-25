@@ -11,7 +11,7 @@ server.Start(5000, 5001);
 while (true)
 {
     ChatPacket packet = new ChatPacket("Server broadcast message", 0);
-    server.UdpServer.BroadcastPacket(packet);
+    server.UdpServer?.BroadcastPacket(packet);
     
     Thread.Sleep(5000);
 }

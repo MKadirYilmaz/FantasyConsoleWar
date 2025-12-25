@@ -2,6 +2,7 @@
 
 public class GameState
 {
+    public static World? GameWorld;
     public static Dictionary<int, Player> Players = new();
     
     public static void UpdatePlayer(int id, int newX, int newY)

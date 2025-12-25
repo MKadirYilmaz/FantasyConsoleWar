@@ -6,8 +6,8 @@ namespace FantasyWar_Server;
 
 public class Server
 {
-    public TcpGameServer TcpServer;
-    public UdpServer UdpServer;
+    public TcpGameServer? TcpServer;
+    public UdpServer? UdpServer;
     
     public void Start(int tcpPort, int udpTargetPort)
     {
@@ -19,7 +19,7 @@ public class Server
 
 public class TcpGameServer
 {
-    private TcpListener _listener;
+    private TcpListener? _listener;
     private List<TcpConnection> _connections = new();
 
     public void Start(int port)
@@ -33,24 +33,19 @@ public class TcpGameServer
     }
     private async Task AcceptClientsAsync()
     {
+        if (_listener == null) return;
         while (true)
         {
             TcpClient client = await _listener.AcceptTcpClientAsync();
             TcpConnection connection = new TcpConnection(client);
 
-            connection.OnPacketReceived += HandlePacket;
+            connection.OnPacketReceived += ServerPackageManager.HandlePacket;
             
             _connections.Add(connection);
             Console.WriteLine("Connected with a client");
 
             SetupNewPlayer(connection);
         }
-    }
-    
-    private void HandlePacket(NetworkPacket packet)
-    {
-        Console.WriteLine($"Received packet of type: {packet.PacketType} from Player ID: {packet.PlayerId}");
-        // Handle different packet types here
     }
     
     public void SendPacketTo(NetworkPacket packet, TcpConnection connection)
