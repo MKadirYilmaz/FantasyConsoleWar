@@ -99,6 +99,7 @@ public class TcpGameServer
         
         string playerName = "Player" + newPlayerId;
         Player newPlayer = new Player(newPlayerId, playerName);
+        newPlayer.SetActorPosition(_world.GetRandomEmptyLocation());
         
         _world.AddOrUpdatePlayer(newPlayerId, newPlayer);
         

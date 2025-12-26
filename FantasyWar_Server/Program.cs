@@ -21,7 +21,7 @@ class Program
             foreach (Player player in serverWorld.Players.Values)
             {
                 MovementPacket moveUpdate = new MovementPacket(player.Position, player.Id);
-                server.TcpServer?.BroadcastPacket(moveUpdate);
+                server.UdpServer?.BroadcastPacket(moveUpdate);
                 
             }
             Thread.Sleep(20); // 50 FPS

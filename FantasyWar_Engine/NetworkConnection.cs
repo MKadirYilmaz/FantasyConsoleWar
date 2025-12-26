@@ -151,8 +151,6 @@ public class UdpListener
             {
                 UdpReceiveResult result = await _udpClient.ReceiveAsync(ct);
                 string json = Encoding.UTF8.GetString(result.Buffer);
-                
-                Console.WriteLine($"Received UDP from {result.RemoteEndPoint}: {json}");
 
                 NetworkPacket? packet = NetworkPacket.FromJson(json);
                 OnPacketReceived?.Invoke(packet);

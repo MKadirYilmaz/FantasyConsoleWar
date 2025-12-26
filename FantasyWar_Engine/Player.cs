@@ -6,7 +6,10 @@ public class Player
     public string Name { get; set; }
     public string Visual { get; set; }
     
-    public int Health { get; set; } = 100;
+    public int Health { get; private set; } = 100;
+    public int MaxHealth { get; private set; } = 100;
+    public bool IsDead => Health <= 0;
+    
     
     public Location Position { get; set; }
     public ConsoleColor Color { get; set; }
@@ -18,11 +21,43 @@ public class Player
         Id = id;
         Name = name;
         Visual = "😀";
-        Position = new Location(0, 0);
+        Position = new Location(1, 1);
         Color = ConsoleColor.White;
     }
+    
+    public void SetVisual(string visual)
+    {
+        Visual = visual;
+    }
+    
+    public void TakeDamage(int damage)
+    {
+        if (IsDead) return;
+        
+        Health -= damage;
+        if (Health < 0) Health = 0;
+    }
+    
+    public void Heal(int amount)
+    {
+        if (IsDead) return;
+        
+        Health += amount;
+        if (Health > MaxHealth) Health = MaxHealth;
+    }
 
-    public bool AddActionPosition(Location vector, World world)
+    public string GetHealthBar(int length = 10)
+    {
+        if (MaxHealth == 0) return "";
+        
+        float percentage = (float)Health / MaxHealth;
+        int filledLength = (int)(length * percentage);
+        
+        return "[" + new string('█', filledLength) + new string('░', length - filledLength) + $"] {Health}/{MaxHealth}";
+    }
+    
+
+    public bool AddActorPosition(Location vector, World world)
     {
         Location newPosition = Position + vector;
         if (world.IsWalkable(newPosition.X, newPosition.Y))
@@ -36,8 +71,13 @@ public class Player
         }
     }
     
-    public bool SetActionPosition(Location newPosition, World world)
+    public bool SetActorPosition(Location newPosition, World? world = null)
     {
+        if (world == null)
+        {
+            Position = newPosition;
+            return true;
+        }
         if (world.IsWalkable(newPosition.X, newPosition.Y))
         {
             Position = newPosition;

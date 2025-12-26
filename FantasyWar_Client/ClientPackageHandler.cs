@@ -57,8 +57,13 @@ public class ClientPackageHandler
         
         if (world.LocalPlayerId == -1)
         {
+            PlayerCamera camera = new PlayerCamera();
+            camera.FollowPlayer(newPlayer);
+            world.LocalCamera = camera;
+            
             world.LocalPlayerId = packet.PlayerId;
             newPlayer.IsLocalPlayer = true;
+            
             Console.WriteLine("-> This is ME!");
         }
         

@@ -15,7 +15,7 @@ class Program
         
         Console.WriteLine("Connecting to server...");
         client = new Client("127.0.0.1", 5000, 5001, packageHandler);
-
+        
         while (gameWorld.LocalPlayerId == -1)
         {
             packageHandler.ProcessPackets(gameWorld);
@@ -52,14 +52,14 @@ class Program
         {
             ConsoleKey.W => new Location(0, -1),
             ConsoleKey.S => new Location(0, 1),
-            ConsoleKey.A => new Location(-2, 0),
-            ConsoleKey.D => new Location(2, 0),
+            ConsoleKey.A => new Location(-1, 0),
+            ConsoleKey.D => new Location(1, 0),
             _ => new Location(0, 0)
         };
 
         if (movement.X != 0 || movement.Y != 0)
         {
-            localPlayer.Position += movement;
+            localPlayer.AddActorPosition(movement, world);
 
             MovementPacket movePacket = new MovementPacket(localPlayer.Position, localPlayer.Id);
             
@@ -76,25 +76,6 @@ class Program
         Console.SetCursorPosition(0, 0);
         Console.WriteLine($"Players Online: {world.Players.Count} | [WASD] Move | [ESC] Quit");
         
-        foreach (var player in world.Players.Values)
-        {
-            if (player.Position.X >= 0 && player.Position.Y >= 0 && 
-                player.Position.X < Console.WindowWidth && player.Position.Y < Console.WindowHeight)
-            {
-                Console.SetCursorPosition((int)player.Position.X, (int)player.Position.Y + 1);
-                
-                if (player.IsLocalPlayer)
-                {
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.Write(player.Visual); // Biz
-                }
-                else
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.Write(player.Visual);
-                }
-                Console.ResetColor();
-            }
-        }
+        world.LocalCamera?.DrawView(world);
     }
 }

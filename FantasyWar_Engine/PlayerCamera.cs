@@ -6,12 +6,12 @@ public class PlayerCamera
     int viewWidth = 25;
     int viewHeight = 10;
     
-    public PlayerCamera(Player player)
+    public void FollowPlayer(Player player)
     {
         followedPlayer = player;
     }
     
-    public void DrawView(World world, IEnumerable<Player> players)
+    public void DrawView(World world)
     {
         var (offsetX, offsetY) = GetViewOffset(world);
         
@@ -37,7 +37,7 @@ public class PlayerCamera
             }
         }
         
-        foreach (var p in players)
+        foreach (var p in world.Players.Values)
         {
             int sx = p.Position.X - offsetX;
             int sy = p.Position.Y - offsetY;

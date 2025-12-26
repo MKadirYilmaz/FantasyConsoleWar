@@ -11,6 +11,7 @@ public class World
     public ConcurrentDictionary<int, Player> Players = new();
 
     public int LocalPlayerId { get; set; } = -1;
+    public PlayerCamera? LocalCamera;
     
     public World(int width, int height)
     {
@@ -39,6 +40,17 @@ public class World
         for (int x = 0; x < Width; x++)
             Grid[x, y] = ' ';
 
+        for(int y = 0; y < Height; y++)
+        {
+            Grid[0, y] = '#'; // Sol duvar
+            Grid[Width - 1, y] = '#'; // Sağ duvar
+        }
+        for(int x = 0; x < Width; x++)
+        {
+            Grid[x, 0] = '#'; // Üst duvar
+            Grid[x, Height - 1] = '#'; // Alt duvar
+        }
+        
         // Rastgele birkaç kaya ekle (Örn: # karakteri)
         Random rnd = new Random(42); // Sabit seed: Herkes aynı haritayı görsün diye!
         for (int i = 0; i < 200; i++)
@@ -47,6 +59,19 @@ public class World
             int ry = rnd.Next(1, Height - 1);
             Grid[rx, ry] = '#'; 
         }
+    }
+    
+    public Location GetRandomEmptyLocation()
+    {
+        Random rnd = new Random();
+        int x, y;
+        do
+        {
+            x = rnd.Next(1, Width - 1);
+            y = rnd.Next(1, Height - 1);
+        } while (Grid[x, y] == '#');
+        
+        return new Location(x, y);
     }
 
     public bool IsWalkable(int x, int y)
