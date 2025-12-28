@@ -25,5 +25,12 @@ public class Entity
         Position = new Location(0, 0);
         Visual = "?";
     }
+    public Entity(int id, string name, Location position, string visual = "?")
+    {
+        Id = id;
+        Name = name;
+        Position = position;
+        Visual = visual;
+    }
     public virtual void OnCollide(Entity other) { }
 }

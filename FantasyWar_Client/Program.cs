@@ -4,13 +4,15 @@ using FantasyWar_Engine;
 class Program
 {
     private static Client? _client;
+    private static Location _lastDirecition = new Location(0, 1);
+    private static ProjectileType _projectileType = ProjectileType.Physical;
     static void Main(string[] args)
     {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
         Console.CursorVisible = false;
         Console.Title = "Fantasy Console Client";
         
-        World gameWorld = new World(100, 100);
+        World gameWorld = new World(50, 50);
         ClientPackageHandler packageHandler = new ClientPackageHandler();
         
         Console.WriteLine("Connecting to server...");
@@ -18,12 +20,13 @@ class Program
         
         while (gameWorld.LocalPlayerId == -1)
         {
-            packageHandler.ProcessPackets(gameWorld);
             Console.WriteLine("Waiting for server to assign player ID...");
+            packageHandler.ProcessPackets(gameWorld);
             Thread.Sleep(100);
         }
-        
-        RenderSystem renderSystem = new RenderSystem();
+        int viewHeight = gameWorld.LocalCamera == null ? 20 : gameWorld.LocalCamera.ViewHeight;
+        int viewWidth = gameWorld.LocalCamera == null ? 50 : gameWorld.LocalCamera.ViewWidth;
+        RenderSystem renderSystem = new RenderSystem(viewWidth, viewHeight);
         
         bool isRunning = true;
         while (isRunning)
@@ -50,14 +53,44 @@ class Program
         Player? localPlayer = world.GetPlayer(world.LocalPlayerId);
         if (localPlayer == null) return;
 
-        Location movement = key switch
+        Location movement = new Location(0, 0);
+        switch (key)
         {
-            ConsoleKey.W => new Location(0, -1),
-            ConsoleKey.S => new Location(0, 1),
-            ConsoleKey.A => new Location(-1, 0),
-            ConsoleKey.D => new Location(1, 0),
-            _ => new Location(0, 0)
-        };
+            case ConsoleKey.W:
+                movement = new Location(0, -1);
+                _lastDirecition = new Location(0, -1);
+                break;
+            case ConsoleKey.S:
+                movement = new Location(0, 1);
+                _lastDirecition = new Location(0, 1);
+                break;
+            case ConsoleKey.A:
+                movement = new Location(-1, 0);
+                _lastDirecition = new Location(-1, 0);
+                break;
+            case ConsoleKey.D:
+                movement = new Location(1, 0);
+                _lastDirecition = new Location(1, 0);
+                break;
+            case ConsoleKey.D1:
+                _projectileType = ProjectileType.Physical;
+                break;
+            case ConsoleKey.D2:
+                _projectileType = ProjectileType.Electric;
+                break;
+            case ConsoleKey.D3:
+                _projectileType = ProjectileType.Fire;
+                break;
+            case ConsoleKey.D4:
+                _projectileType = ProjectileType.Ice;
+                break;
+            case ConsoleKey.Spacebar:
+                ActionPacket actionPacket = new ActionPacket(_projectileType, world.LocalPlayerId, _lastDirecition);
+                _client?.TcpClient.SendPacket(actionPacket);
+                break;
+        }
+        
+        
 
         if (movement.X != 0 || movement.Y != 0)
         {
@@ -73,13 +106,5 @@ class Program
     {
         if (world.LocalCamera == null) return;
         renderSystem.Render(world, world.LocalCamera);
-        // Use double buffering later
-        //Console.Clear();
-
-        // UI
-        //Console.SetCursorPosition(0, 0);
-        //Console.WriteLine($"Players Online: {world.Players.Count} | [WASD] Move | [ESC] Quit");
-        
-        //world.LocalCamera?.DrawView(world);
     }
 }

@@ -1,74 +1,89 @@
-﻿namespace FantasyWar_Engine;
+﻿using System.Text;
+
+namespace FantasyWar_Engine;
 
 public class RenderSystem
 {
-    string[] _firstBuffer;
-    string[] _secondBuffer;
-    
-    bool _useFirstBuffer = true;
+    private int _viewWidth;
+    private int _viewHeight;
 
-    public void SwapBuffers()
+    public RenderSystem(int viewWidth, int viewHeight)
     {
-        _useFirstBuffer = !_useFirstBuffer;
+        _viewWidth = viewWidth;
+        _viewHeight = viewHeight;
+        
+        Console.CursorVisible = false;
     }
-    
+
     public void Render(World world, PlayerCamera camera)
     {
         
+        // 1. Buffer oluştur (Ekrana basılacak kareler)
+        string[,] buffer = new string[_viewHeight, _viewWidth];
+        ConsoleColor[,] colorBuffer = new ConsoleColor[_viewHeight, _viewWidth];
+
         var (offsetX, offsetY) = camera.GetViewOffset(world);
-        int viewWidth = camera.ViewWidth;
-        int viewHeight = camera.ViewHeight;
-        
-        DrawMapLayer(world, offsetX, offsetY, viewWidth, viewHeight);
 
-        for (int y = 0; y < camera.ViewHeight; y++)
+        // 2. Önce Zemin ve Statik Duvarları Çiz (Grid'den okuyarak)
+        for (int y = 0; y < _viewHeight; y++)
         {
-            for (int x = 0; x < camera.ViewWidth; x++)
+            for (int x = 0; x < _viewWidth; x++)
             {
-                int worldX = x + offsetX;
-                int worldY = y + offsetY;
-                
-                Entity? entity = world.GetEntityAtPosition(new Location(worldX, worldY));
-                if (entity != null) DrawEntity(entity, offsetX, offsetY, viewWidth, viewHeight);
-            }
-        }
-    }
+                int worldX = offsetX + x;
+                int worldY = offsetY + y;
 
-    private void DrawMapLayer(World world, int offX, int offY, int w, int h)
-    {
-        
-        for (int y = 0; y < h; y++)
-        {
-            for (int x = 0; x < w; x++)
-            {
-                Console.SetCursorPosition(x * 2, y);
-                int worldX = x + offX;
-                int worldY = y + offY;
-
-                if (worldX >= 0 && worldX < world.Width && worldY >= 0 && worldY < world.Height)
+                // Harita sınırları dışı
+                if (worldX < 0 || worldX >= world.Width || worldY < 0 || worldY >= world.Height)
                 {
-                    char tile = world.Grid[worldX, worldY];
-                    Console.Write(tile == '#' ? "🧱" : "  ");
+                    buffer[y, x] = "  ";
+                    continue;
+                }
+
+                // Grid kontrolü (Duvar var mı?)
+                // DİKKAT: Grid[x, y] olmalı, [y, x] değil!
+                int entityId = world.Grid[worldX, worldY];
+                
+                if (entityId != -1 && world.Entities.TryGetValue(entityId, out Entity? wall))
+                {
+                    buffer[y, x] = wall.Visual;
+                    colorBuffer[y, x] = wall.Color;
                 }
                 else
                 {
-                    Console.Write("  ");
+                    buffer[y, x] = "  "; // Zemin
+                    colorBuffer[y, x] = ConsoleColor.DarkGray;
                 }
             }
         }
-    }
 
-    private void DrawEntity(Entity entity, int offX, int offY, int w, int h)
-    {
-        int screenX = entity.Position.X - offX;
-        int screenY = entity.Position.Y - offY;
-        
-        if (screenX >= 0 && screenX < w && screenY >= 0 && screenY < h)
+        // 3. Dinamik Entity'leri Çiz (Oyuncular, Mermiler)
+        // Grid üzerinde olmayan veya hareket halinde olan nesneler için
+        foreach (var entity in world.Entities.Values)
         {
-            Console.SetCursorPosition(screenX * 2, screenY);
-            Console.ForegroundColor = entity.Color;
-            Console.Write(entity.Visual);
-            Console.ResetColor();
+            // Entity ekranın içinde mi?
+            int screenX = entity.Position.X - offsetX;
+            int screenY = entity.Position.Y - offsetY;
+
+            if (screenX >= 0 && screenX < _viewWidth && screenY >= 0 && screenY < _viewHeight)
+            {
+                buffer[screenY, screenX] = entity.Visual;
+                colorBuffer[screenY, screenX] = entity.Color;
+            }
         }
+
+        // 4. Buffer'ı Ekrana Bas (StringBuilder ile tek seferde)
+        Console.SetCursorPosition(0, 0);
+        StringBuilder sb = new StringBuilder();
+        
+        for (int y = 0; y < _viewHeight; y++)
+        {
+            for (int x = 0; x < _viewWidth; x++)
+            {
+                // Renk desteği için burayı ileride geliştirebilirsin, şimdilik düz text
+                sb.Append(buffer[y, x]);
+            }
+            sb.AppendLine();
+        }
+        Console.Write(sb.ToString());
     }
 }

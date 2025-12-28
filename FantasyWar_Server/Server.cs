@@ -85,7 +85,7 @@ public class TcpGameServer
                 
                 Console.WriteLine($"Player {playerId} has disconnected and been removed from the game.");
                 
-                WorldPacket worldPacket = new WorldPacket(_world.Players);
+                WorldPacket worldPacket = new WorldPacket(_world.Players, _world.Entities);
                 BroadcastPacket(worldPacket);
             }
         }
@@ -112,7 +112,7 @@ public class TcpGameServer
         LoginPacket loginPacket = new LoginPacket(newPlayer.Name, newPlayer.Id);
         SendPacketTo(loginPacket, clientConn);
         
-        WorldPacket worldPacket = new WorldPacket(_world.Players);
+        WorldPacket worldPacket = new WorldPacket(_world.Players, _world.Entities);
         BroadcastPacket(worldPacket);
     }
 }

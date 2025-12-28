@@ -28,7 +28,7 @@ public abstract class NetworkPacket
             PacketType.Movement => JsonSerializer.Deserialize<MovementPacket>(json),
             PacketType.Chat => JsonSerializer.Deserialize<ChatPacket>(json),
             PacketType.WorldState => JsonSerializer.Deserialize<WorldPacket>(json),
-            PacketType.Action => JsonSerializer.Deserialize<WorldPacket>(json),
+            PacketType.Action => JsonSerializer.Deserialize<ActionPacket>(json),
             _ => null
         };
     }
@@ -78,15 +78,26 @@ public class ChatPacket : NetworkPacket
 public class WorldPacket : NetworkPacket
 {
     public ConcurrentDictionary<int, Player> Players { get; set; }
+    public ConcurrentDictionary<int, Entity> Entities { get; set; }
 
-    public WorldPacket(ConcurrentDictionary<int, Player> players)
+    public WorldPacket(ConcurrentDictionary<int, Player> players, ConcurrentDictionary<int, Entity> entities)
     {
         PacketType = PacketType.WorldState;
         Players = players;
+        Entities = entities;
     }
 }
 
 public class ActionPacket : NetworkPacket
 {
+    public ProjectileType ProjectileType { get; set; }
+    public Location Direction { get; set; }
     
+    public ActionPacket(ProjectileType projectileType, int playerId, Location direction)
+    {
+        PacketType = PacketType.Action;
+        ProjectileType = projectileType;
+        PlayerId = playerId;
+        Direction = direction;
+    }
 }

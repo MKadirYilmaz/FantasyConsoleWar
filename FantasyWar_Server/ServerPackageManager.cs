@@ -6,7 +6,6 @@ namespace FantasyWar_Server;
 public class ServerPackageManager
 {
     private ConcurrentQueue<NetworkPacket> _packetQueue = new ConcurrentQueue<NetworkPacket>();
-    
     public void OnDataReceived(NetworkPacket? packet)
     {
         if(packet != null)
@@ -41,6 +40,10 @@ public class ServerPackageManager
                 ChatPacket chatPacket = (ChatPacket)packet;
                 //DisplayChatMessage(chatPacket);
                 break;
+            case PacketType.Action:
+                ActionPacket actionPacket = (ActionPacket)packet;
+                HandleAction(actionPacket, world);
+                break;
         }
     }
 
@@ -50,6 +53,18 @@ public class ServerPackageManager
         if (player != null)
         {
             player.Position = packet.MovementVector;
+        }
+    }
+    private void HandleAction(ActionPacket packet, World world)
+    {
+        Player? player = world.GetPlayer(packet.PlayerId);
+        if (player != null)
+        {
+            // Process action based on ActionType
+            Console.WriteLine($"Player {player.Name} performed action {packet.ProjectileType}");
+
+            Projectile projectile = EntityManager.CreateProjectile(packet.PlayerId, packet.Direction, 2, 100, packet.ProjectileType);
+            projectile.Position = player.Position + packet.Direction;
         }
     }
 }

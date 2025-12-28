@@ -47,10 +47,14 @@ public class Player : Entity
     
     public void TakeDamage(int damage)
     {
-        if (IsDead) return;
+        //if (IsDead) return;
         
         Health -= damage;
-        if (Health < 0) Health = 0;
+        if (Health <= 0)
+        {
+            World.Instance?.Players.TryRemove(Id, out _);
+            World.Instance?.Entities.TryRemove(Id, out _);
+        }
     }
     
     public void Heal(int amount)
@@ -80,7 +84,7 @@ public class Player : Entity
             Position = newPosition;
             return true;
         }
-        if (world.IsWalkable(newPosition.X, newPosition.Y))
+        if (PhysicsSystem.IsWalkable(newPosition))
         {
             Position = newPosition;
             return true;
@@ -98,7 +102,7 @@ public class Player : Entity
             Position = newPosition;
             return true;
         }
-        if (world.IsWalkable(newPosition.X, newPosition.Y))
+        if (PhysicsSystem.IsWalkable(newPosition))
         {
             Position = newPosition;
             return true;
@@ -137,6 +141,7 @@ public struct Location
     {
         return new Location(a.X / scalar, a.Y / scalar);
     }
+    
     public static bool operator ==(Location a, Location b)
     {
         return a.X == b.X && a.Y == b.Y;

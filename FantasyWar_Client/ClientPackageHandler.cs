@@ -102,6 +102,37 @@ public class ClientPackageHandler
                 Console.WriteLine("[System] Player removed: " + kvp.Value.Name);
             }
         }
+        
+        // 2. ENTITY'LERİ (MERMİLERİ) GÜNCELLE
+        if (!packet.Entities.IsEmpty)
+        {
+            // Server'dan gelen yeni entityleri ekle veya güncelle
+            foreach (var kvp in packet.Entities)
+            {
+                int entityId = kvp.Key;
+                Entity incomingEntity = kvp.Value;
+
+                // Eğer bu entity bir oyuncuysa zaten yukarıda hallettik, atla.
+                // (ID kontrolü veya tip kontrolü yapılabilir, şimdilik ID çakışması yok varsayıyoruz)
+                if (world.Players.ContainsKey(entityId)) continue;
+
+                world.AddOrUpdateEntity(entityId, incomingEntity);
+            }
+
+            // Server'da artık olmayan entityleri (patlamış mermileri) sil
+            // Not: ConcurrentDictionary üzerinde iterasyon yaparken silmek güvenlidir ama dikkatli olunmalı.
+            // Basit bir yöntem: Client'taki entity server listesinde yoksa sil.
+            foreach (var localEntityId in world.Entities.Keys)
+            {
+                // Oyuncuları silme, sadece mermileri kontrol et
+                if (world.Players.ContainsKey(localEntityId)) continue;
+
+                if (!packet.Entities.ContainsKey(localEntityId))
+                {
+                    world.Entities.TryRemove(localEntityId, out _);
+                }
+            }
+        }
     }
 
     private void HandleMovement(MovementPacket packet, World world)
