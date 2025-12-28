@@ -1,28 +1,43 @@
 ﻿namespace FantasyWar_Engine;
 
-public class Player
+public class Player : Entity
 {
-    public int Id { get; set; }
-    public string Name { get; set; }
-    public string Visual { get; set; }
-    
     public int Health { get; private set; } = 100;
     public int MaxHealth { get; private set; } = 100;
     public bool IsDead => Health <= 0;
     
     
-    public Location Position { get; set; }
-    public ConsoleColor Color { get; set; }
-    
     public bool IsLocalPlayer { get; set; } = false;
-
-    public Player(int id, string name)
+    public Player() : base()
     {
-        Id = id;
-        Name = name;
+        Id = -1;
+        Name = "Player";
         Visual = "😀";
         Position = new Location(1, 1);
         Color = ConsoleColor.White;
+
+        IsSolid = true;
+    }
+    
+    public Player(int id) : base(id)
+    {
+        Id = id;
+        Name = "Player";
+        Visual = "😀";
+        Position = new Location(1, 1);
+        Color = ConsoleColor.White;
+
+        IsSolid = true;
+    }
+    public Player(int id, string name, Location position, string visual = "😀", ConsoleColor color = ConsoleColor.White) : base(id)
+    {
+        Id = id;
+        Name = name;
+        Position = position;
+        Visual = visual;
+        Color = color;
+        
+        IsSolid = true;
     }
     
     public void SetVisual(string visual)
@@ -57,9 +72,14 @@ public class Player
     }
     
 
-    public bool AddActorPosition(Location vector, World world)
+    public bool AddActorPosition(Location vector, World? world = null)
     {
         Location newPosition = Position + vector;
+        if (world == null)
+        {
+            Position = newPosition;
+            return true;
+        }
         if (world.IsWalkable(newPosition.X, newPosition.Y))
         {
             Position = newPosition;

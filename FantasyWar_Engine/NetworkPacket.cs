@@ -8,7 +8,8 @@ public enum PacketType : byte
     Login = 1,
     Movement = 2,
     Chat = 3,
-    WorldState = 4
+    WorldState = 4,
+    Action = 5
 }
 
 public abstract class NetworkPacket
@@ -27,6 +28,7 @@ public abstract class NetworkPacket
             PacketType.Movement => JsonSerializer.Deserialize<MovementPacket>(json),
             PacketType.Chat => JsonSerializer.Deserialize<ChatPacket>(json),
             PacketType.WorldState => JsonSerializer.Deserialize<WorldPacket>(json),
+            PacketType.Action => JsonSerializer.Deserialize<WorldPacket>(json),
             _ => null
         };
     }
@@ -82,4 +84,9 @@ public class WorldPacket : NetworkPacket
         PacketType = PacketType.WorldState;
         Players = players;
     }
+}
+
+public class ActionPacket : NetworkPacket
+{
+    
 }

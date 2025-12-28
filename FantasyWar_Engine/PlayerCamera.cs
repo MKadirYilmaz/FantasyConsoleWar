@@ -3,8 +3,8 @@
 public class PlayerCamera
 {
     Player followedPlayer;
-    int viewWidth = 25;
-    int viewHeight = 10;
+    public int ViewWidth { get; private set; } = 25;
+    public int ViewHeight { get; private set; } = 10;
     
     public void FollowPlayer(Player player)
     {
@@ -15,9 +15,9 @@ public class PlayerCamera
     {
         var (offsetX, offsetY) = GetViewOffset(world);
         
-        for (int y = 0; y < viewHeight; y++)
+        for (int y = 0; y < ViewHeight; y++)
         {
-            for (int x = 0; x < viewWidth; x++)
+            for (int x = 0; x < ViewWidth; x++)
             {
                 Console.SetCursorPosition(x * 2, y);
 
@@ -42,7 +42,7 @@ public class PlayerCamera
             int sx = p.Position.X - offsetX;
             int sy = p.Position.Y - offsetY;
 
-            if (sx < 0 || sx >= viewWidth || sy < 0 || sy >= viewHeight)
+            if (sx < 0 || sx >= ViewWidth || sy < 0 || sy >= ViewHeight)
                 continue;
 
             Console.SetCursorPosition(sx * 2, sy);
@@ -54,20 +54,20 @@ public class PlayerCamera
     
     public void SetViewSize(int width, int height)
     {
-        viewWidth = width;
-        viewHeight = height;
+        ViewWidth = width;
+        ViewHeight = height;
     }
     
-    private (int offsetX, int offsetY) GetViewOffset(World world)
+    public (int offsetX, int offsetY) GetViewOffset(World world)
     {
-        int offsetX = followedPlayer.Position.X - viewWidth / 2;
-        int offsetY = followedPlayer.Position.Y - viewHeight / 2;
+        int offsetX = followedPlayer.Position.X - ViewWidth / 2;
+        int offsetY = followedPlayer.Position.Y - ViewHeight / 2;
 
         // Sınırları kontrol et
         if (offsetX < 0) offsetX = 0;
         if (offsetY < 0) offsetY = 0;
-        if (offsetX + viewWidth > world.Width) offsetX = world.Width - viewWidth;
-        if (offsetY + viewHeight > world.Height) offsetY = world.Height - viewHeight;
+        if (offsetX + ViewWidth > world.Width) offsetX = world.Width - ViewWidth;
+        if (offsetY + ViewHeight > world.Height) offsetY = world.Height - ViewHeight;
 
         return (offsetX, offsetY);
     }

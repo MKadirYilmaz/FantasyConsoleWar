@@ -81,6 +81,8 @@ public class TcpGameServer
             if (_world != null)
             {
                 _world.Players.TryRemove(playerId, out _);
+                _world.Entities.TryRemove(playerId, out _);
+                
                 Console.WriteLine($"Player {playerId} has disconnected and been removed from the game.");
                 
                 WorldPacket worldPacket = new WorldPacket(_world.Players);
@@ -98,10 +100,10 @@ public class TcpGameServer
         while(_world.Players.ContainsKey(newPlayerId)) newPlayerId++;
         
         string playerName = "Player" + newPlayerId;
-        Player newPlayer = new Player(newPlayerId, playerName);
-        newPlayer.SetActorPosition(_world.GetRandomEmptyLocation());
+        Player newPlayer = new Player(newPlayerId, playerName, _world.GetRandomEmptyLocation());
         
         _world.AddOrUpdatePlayer(newPlayerId, newPlayer);
+        _world.AddOrUpdateEntity(newPlayerId, newPlayer);
         
         _connections.TryAdd(newPlayerId, clientConn);
         

@@ -10,8 +10,8 @@ public class TcpConnection
     private StreamReader _reader;
     private StreamWriter _writer;
     
-    public event Action<NetworkPacket> OnPacketReceived;
-    public event Action<TcpConnection> OnDisconnect;
+    public event Action<NetworkPacket>? OnPacketReceived;
+    public event Action<TcpConnection>? OnDisconnect;
     
     public TcpConnection(TcpClient client)
     {
@@ -85,7 +85,7 @@ public class UdpBroadcaster
 {
     private readonly UdpClient _udpClient;
     private readonly IPEndPoint _broadcastEndPoint;
-    private bool _disposed = false;
+    private bool _disposed;
     
 
     public UdpBroadcaster(int port)
@@ -118,7 +118,7 @@ public class UdpBroadcaster
     public void Dispose()
     {
         _disposed = true;
-        _udpClient?.Dispose();
+        _udpClient.Dispose();
     }
 }
 
@@ -172,9 +172,9 @@ public class UdpListener
 
     public void Dispose()
     {
-        _cts?.Cancel();
-        _udpClient?.Dispose();
-        _cts?.Dispose();
+        _cts.Cancel();
+        _udpClient.Dispose();
+        _cts.Dispose();
     }
 }
 

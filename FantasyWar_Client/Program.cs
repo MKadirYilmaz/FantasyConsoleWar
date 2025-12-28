@@ -3,7 +3,7 @@ using FantasyWar_Engine;
 
 class Program
 {
-    private static Client client;
+    private static Client? _client;
     static void Main(string[] args)
     {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -14,7 +14,7 @@ class Program
         ClientPackageHandler packageHandler = new ClientPackageHandler();
         
         Console.WriteLine("Connecting to server...");
-        client = new Client("127.0.0.1", 5000, 5001, packageHandler);
+        _client = new Client("127.0.0.1", 5000, 5001, packageHandler);
         
         while (gameWorld.LocalPlayerId == -1)
         {
@@ -22,6 +22,8 @@ class Program
             Console.WriteLine("Waiting for server to assign player ID...");
             Thread.Sleep(100);
         }
+        
+        RenderSystem renderSystem = new RenderSystem();
         
         bool isRunning = true;
         while (isRunning)
@@ -37,7 +39,7 @@ class Program
             
             packageHandler.ProcessPackets(gameWorld);
             
-            Render(gameWorld);
+            Render(gameWorld, renderSystem);
             
             Thread.Sleep(20); // 50 FPS
         }
@@ -63,19 +65,21 @@ class Program
 
             MovementPacket movePacket = new MovementPacket(localPlayer.Position, localPlayer.Id);
             
-            client.TcpClient.SendPacket(movePacket);
+            _client?.TcpClient.SendPacket(movePacket);
         }
     }
 
-    static void Render(World world)
+    static void Render(World world, RenderSystem renderSystem)
     {
+        if (world.LocalCamera == null) return;
+        renderSystem.Render(world, world.LocalCamera);
         // Use double buffering later
-        Console.Clear();
+        //Console.Clear();
 
         // UI
-        Console.SetCursorPosition(0, 0);
-        Console.WriteLine($"Players Online: {world.Players.Count} | [WASD] Move | [ESC] Quit");
+        //Console.SetCursorPosition(0, 0);
+        //Console.WriteLine($"Players Online: {world.Players.Count} | [WASD] Move | [ESC] Quit");
         
-        world.LocalCamera?.DrawView(world);
+        //world.LocalCamera?.DrawView(world);
     }
 }

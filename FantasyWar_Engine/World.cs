@@ -9,6 +9,7 @@ public class World
     public char[,] Grid { get; }
     
     public ConcurrentDictionary<int, Player> Players = new();
+    public ConcurrentDictionary<int, Entity> Entities = new();
 
     public int LocalPlayerId { get; set; } = -1;
     public PlayerCamera? LocalCamera;
@@ -20,6 +21,12 @@ public class World
         Grid = new char[width, height];
         GenerateSimpleMap();
     }
+    
+    public void AddOrUpdateEntity(int id, Entity entity)
+    {
+        if (Entities.ContainsKey(id)) Entities[id] = entity;
+        else Entities.TryAdd(id, entity);
+    }
 
     public void AddOrUpdatePlayer(int id, Player player)
     {
@@ -30,6 +37,17 @@ public class World
     public Player? GetPlayer(int id)
     {
         if(Players.TryGetValue(id, out var player)) return player;
+        return null;
+    }
+
+    public Entity? GetEntityAtPosition(Location location)
+    {
+        foreach(var entity in Entities.Values)
+        {
+            if (entity.Position.X == location.X && entity.Position.Y == location.Y)
+                return entity;
+        }
+
         return null;
     }
 

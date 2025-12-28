@@ -53,7 +53,7 @@ public class ClientPackageHandler
         Console.WriteLine($"[Login] Player: {packet.PlayerName}, ID: {packet.PlayerId}");
 
         
-        var newPlayer = new Player(packet.PlayerId, packet.PlayerName);
+        var newPlayer = new Player(packet.PlayerId, packet.PlayerName, new Location(1, 1));
         
         if (world.LocalPlayerId == -1)
         {
@@ -68,6 +68,7 @@ public class ClientPackageHandler
         }
         
         world.AddOrUpdatePlayer(packet.PlayerId, newPlayer);
+        world.AddOrUpdateEntity(packet.PlayerId, newPlayer);
     }
 
     private void HandleWorldStateUpdate(WorldPacket packet, World world)
@@ -85,6 +86,7 @@ public class ClientPackageHandler
                     incomingPlayer.IsLocalPlayer = true;
                 }
                 world.AddOrUpdatePlayer(playerId, incomingPlayer);
+                world.AddOrUpdateEntity(playerId, incomingPlayer);
                 Console.WriteLine("[System] Player synced: " + incomingPlayer.Name);
             }
         }
@@ -96,6 +98,7 @@ public class ClientPackageHandler
             if (!packet.Players.ContainsKey(id))
             {
                 world.Players.TryRemove(id, out _);
+                world.Entities.TryRemove(id, out _);
                 Console.WriteLine("[System] Player removed: " + kvp.Value.Name);
             }
         }
