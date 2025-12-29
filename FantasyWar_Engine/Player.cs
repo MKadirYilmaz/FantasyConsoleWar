@@ -2,9 +2,17 @@
 
 public class Player : Entity
 {
-    public int Health { get; private set; } = 100;
-    public int MaxHealth { get; private set; } = 100;
+    public int Health { get; set; } = 100;
+    public int MaxHealth = 100;
     public bool IsDead => Health <= 0;
+
+    public event Action<ProjectileType>? OnHit;
+
+    public int Resistance { get; set; } = 0;
+    public bool CanMove { get; set; } = true;
+    public bool IsBurning { get; set; } = false;
+    
+    private DateTime _burnEndTime;
     
     
     public bool IsLocalPlayer { get; set; } = false;
@@ -47,9 +55,9 @@ public class Player : Entity
     
     public void TakeDamage(int damage)
     {
-        //if (IsDead) return;
+        float resistanceFactor = 100 - Resistance; // 0 - 200
+        Health -= (int)(damage * (resistanceFactor / 100));
         
-        Health -= damage;
         if (Health <= 0)
         {
             World.Instance?.Players.TryRemove(Id, out _);
@@ -69,7 +77,9 @@ public class Player : Entity
     {
         if (MaxHealth == 0) return "";
         
-        float percentage = (float)Health / MaxHealth;
+        int currentHealth = Health < 0 ? 0 : Health;
+        
+        float percentage = (float)currentHealth / MaxHealth;
         int filledLength = (int)(length * percentage);
         
         return "[" + new string('█', filledLength) + new string('░', length - filledLength) + $"] {Health}/{MaxHealth}";
@@ -89,10 +99,8 @@ public class Player : Entity
             Position = newPosition;
             return true;
         }
-        else
-        {
-            return false;
-        }
+
+        return false;
     }
     
     public bool SetActorPosition(Location newPosition, World? world = null)
@@ -113,6 +121,62 @@ public class Player : Entity
         }
     }
     
+    public override void OnCollide(Entity other)
+    {
+        if (other is Projectile projectile)
+        {
+            switch (projectile.Type)
+            {
+                case ProjectileType.Physical:
+                    TakeDamage(projectile.Damage);
+                    break;
+                case ProjectileType.Electric:
+                    Task.Run(() => ShockPlayer(projectile));
+                    break;
+                case ProjectileType.Fire:
+                    Task.Run(() => BurnPlayer(projectile));
+                    break;
+                case ProjectileType.Ice:
+                    Task.Run(() => FreezePlayer(projectile));
+                    break;
+            }
+        }
+    }
+    
+    private async Task BurnPlayer(Projectile projectile)
+    {
+        IsBurning = true;
+        _burnEndTime = DateTime.Now.AddSeconds(5);
+    
+        int burnDamage = projectile.Damage / 5;
+        for (int i = 0; i < 5; i++)
+        {
+            if (IsDead) break;
+            TakeDamage(burnDamage);
+            await Task.Delay(1000);
+        }
+        IsBurning = false;
+    }
+    
+    private async Task ShockPlayer(Projectile projectile)
+    {
+        TakeDamage(projectile.Damage);
+
+        Resistance = -50;
+        await Task.Delay(5000);
+        Resistance = 0;
+    }
+    
+    private async Task FreezePlayer(Projectile projectile)
+    {
+        TakeDamage(projectile.Damage);
+
+        Resistance = 80;
+        CanMove = false;
+        await Task.Delay(3000);
+        CanMove = true;
+        Resistance = 0;
+    }
 }
 
 public struct Location

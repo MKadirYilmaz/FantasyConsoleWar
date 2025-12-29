@@ -43,7 +43,10 @@ public class World
 
     public void AddOrUpdatePlayer(int id, Player player)
     {
-        if (Players.ContainsKey(id)) Players[id] = player;
+        if (Players.ContainsKey(id))
+        {
+            Players[id] = player;
+        }
         else Players.TryAdd(id, player);
     }
 

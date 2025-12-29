@@ -58,7 +58,7 @@ public class ClientPackageHandler
         if (world.LocalPlayerId == -1)
         {
             PlayerCamera camera = new PlayerCamera();
-            camera.FollowPlayer(newPlayer);
+            camera.FollowPlayer(newPlayer.Id);
             world.LocalCamera = camera;
             
             world.LocalPlayerId = packet.PlayerId;
@@ -73,22 +73,21 @@ public class ClientPackageHandler
 
     private void HandleWorldStateUpdate(WorldPacket packet, World world)
     {
+        // Add or update players
         foreach(var kvp in packet.Players)
         {
             int playerId = kvp.Key;
             Player incomingPlayer = kvp.Value;
             
-            var existingPlayer = world.GetPlayer(playerId);
-            if (existingPlayer == null)
+            
+            if (playerId == world.LocalPlayerId)
             {
-                if (playerId == world.LocalPlayerId)
-                {
-                    incomingPlayer.IsLocalPlayer = true;
-                }
-                world.AddOrUpdatePlayer(playerId, incomingPlayer);
-                world.AddOrUpdateEntity(playerId, incomingPlayer);
-                Console.WriteLine("[System] Player synced: " + incomingPlayer.Name);
+                incomingPlayer.IsLocalPlayer = true;
             }
+            
+            
+            world.AddOrUpdatePlayer(playerId, incomingPlayer);
+            world.AddOrUpdateEntity(playerId, incomingPlayer);
         }
 
         foreach (var kvp in world.Players)
@@ -103,28 +102,24 @@ public class ClientPackageHandler
             }
         }
         
-        // 2. ENTITY'LERİ (MERMİLERİ) GÜNCELLE
         if (!packet.Entities.IsEmpty)
         {
-            // Server'dan gelen yeni entityleri ekle veya güncelle
+            // Add or update entities
             foreach (var kvp in packet.Entities)
             {
                 int entityId = kvp.Key;
                 Entity incomingEntity = kvp.Value;
 
-                // Eğer bu entity bir oyuncuysa zaten yukarıda hallettik, atla.
-                // (ID kontrolü veya tip kontrolü yapılabilir, şimdilik ID çakışması yok varsayıyoruz)
+                // Skip players, already handled
                 if (world.Players.ContainsKey(entityId)) continue;
 
                 world.AddOrUpdateEntity(entityId, incomingEntity);
             }
 
-            // Server'da artık olmayan entityleri (patlamış mermileri) sil
-            // Not: ConcurrentDictionary üzerinde iterasyon yaparken silmek güvenlidir ama dikkatli olunmalı.
-            // Basit bir yöntem: Client'taki entity server listesinde yoksa sil.
+            // Remove entities that are no longer present
             foreach (var localEntityId in world.Entities.Keys)
             {
-                // Oyuncuları silme, sadece mermileri kontrol et
+                // Skip players, already handled
                 if (world.Players.ContainsKey(localEntityId)) continue;
 
                 if (!packet.Entities.ContainsKey(localEntityId))
@@ -137,7 +132,6 @@ public class ClientPackageHandler
 
     private void HandleMovement(MovementPacket packet, World world)
     {
-        // Dünyadan oyuncuyu bul
         var player = world.GetPlayer(packet.PlayerId);
 
         if (player != null)

@@ -6,6 +6,7 @@ public class RenderSystem
 {
     private int _viewWidth;
     private int _viewHeight;
+    private const int UI_HEIGHT = 3;
 
     public RenderSystem(int viewWidth, int viewHeight)
     {
@@ -17,73 +18,116 @@ public class RenderSystem
 
     public void Render(World world, PlayerCamera camera)
     {
+        int totalHeight = _viewHeight + UI_HEIGHT;
         
-        // 1. Buffer oluştur (Ekrana basılacak kareler)
-        string[,] buffer = new string[_viewHeight, _viewWidth];
-        ConsoleColor[,] colorBuffer = new ConsoleColor[_viewHeight, _viewWidth];
+        // Create buffer
+        string[,] buffer = new string[totalHeight, _viewWidth];
+        ConsoleColor[,] colorBuffer = new ConsoleColor[totalHeight, _viewWidth];
 
+        Player? localPlayer = world.GetPlayer(world.LocalPlayerId);
+        DrawUI(localPlayer, buffer, colorBuffer);
+        
         var (offsetX, offsetY) = camera.GetViewOffset(world);
 
-        // 2. Önce Zemin ve Statik Duvarları Çiz (Grid'den okuyarak)
+        // Draw static world (walls, ground)
         for (int y = 0; y < _viewHeight; y++)
         {
             for (int x = 0; x < _viewWidth; x++)
             {
+                int bufferY = y + UI_HEIGHT;
+                
                 int worldX = offsetX + x;
                 int worldY = offsetY + y;
 
-                // Harita sınırları dışı
+                // Out of bounds check
                 if (worldX < 0 || worldX >= world.Width || worldY < 0 || worldY >= world.Height)
                 {
-                    buffer[y, x] = "  ";
+                    buffer[bufferY, x] = "  ";
                     continue;
                 }
-
-                // Grid kontrolü (Duvar var mı?)
-                // DİKKAT: Grid[x, y] olmalı, [y, x] değil!
+                
                 int entityId = world.Grid[worldX, worldY];
                 
                 if (entityId != -1 && world.Entities.TryGetValue(entityId, out Entity? wall))
                 {
-                    buffer[y, x] = wall.Visual;
-                    colorBuffer[y, x] = wall.Color;
+                    buffer[bufferY, x] = wall.Visual;
+                    colorBuffer[bufferY, x] = wall.Color;
                 }
                 else
                 {
-                    buffer[y, x] = "  "; // Zemin
-                    colorBuffer[y, x] = ConsoleColor.DarkGray;
+                    buffer[bufferY, x] = "  "; // Empty ground
+                    colorBuffer[bufferY, x] = ConsoleColor.DarkGreen;
                 }
             }
         }
 
-        // 3. Dinamik Entity'leri Çiz (Oyuncular, Mermiler)
-        // Grid üzerinde olmayan veya hareket halinde olan nesneler için
+        // Dynamic Entities (Players, Projectiles, Items)
         foreach (var entity in world.Entities.Values)
         {
-            // Entity ekranın içinde mi?
+            
             int screenX = entity.Position.X - offsetX;
             int screenY = entity.Position.Y - offsetY;
 
             if (screenX >= 0 && screenX < _viewWidth && screenY >= 0 && screenY < _viewHeight)
             {
-                buffer[screenY, screenX] = entity.Visual;
-                colorBuffer[screenY, screenX] = entity.Color;
+                buffer[screenY + UI_HEIGHT, screenX] = entity.Visual;
+                colorBuffer[screenY + UI_HEIGHT, screenX] = entity.Color;
             }
         }
 
-        // 4. Buffer'ı Ekrana Bas (StringBuilder ile tek seferde)
+        // Render buffer to console
         Console.SetCursorPosition(0, 0);
         StringBuilder sb = new StringBuilder();
         
-        for (int y = 0; y < _viewHeight; y++)
+        for (int y = 0; y < totalHeight; y++)
         {
             for (int x = 0; x < _viewWidth; x++)
             {
-                // Renk desteği için burayı ileride geliştirebilirsin, şimdilik düz text
                 sb.Append(buffer[y, x]);
             }
             sb.AppendLine();
         }
         Console.Write(sb.ToString());
+    }
+    
+    private void DrawUI(Player? player, string[,] buffer, ConsoleColor[,] colorBuffer)
+    {
+        // Clear UI area
+        for (int y = 0; y < UI_HEIGHT; y++)
+        for (int x = 0; x < _viewWidth; x++)
+            buffer[y, x] = " "; 
+
+        // Çerçeve veya ayırıcı çizgi (Opsiyonel)
+        for (int x = 0; x < _viewWidth; x++) buffer[UI_HEIGHT - 1, x] = "═";
+
+        if (player == null)
+        {
+            WriteToBuffer(buffer, 0, 0, "Connecting...");
+            return;
+        }
+        
+        string healthBar = player.GetHealthBar(10); // [████░░] 80/100
+        string info = $"{player.Name} (ID:{player.Id}) {healthBar}";
+        WriteToBuffer(buffer, 0, 1, info);
+
+        // Status Effects
+        string status = "Status: ";
+        if (player.Resistance > 0) status += "🛡️(Resistance) ";
+        if (player.Resistance < 0) status += "⚡(Shocked)/Weakened ";
+        if (!player.CanMove) status += "❄️(Frozen) ";
+        if (player.IsBurning) status += "🔥(Burning) ";
+
+        WriteToBuffer(buffer, 1, 1, status);
+    }
+    
+    private void WriteToBuffer(string[,] buffer, int row, int col, string text)
+    {
+        int currentX = col;
+        foreach (char c in text)
+        {
+            if (currentX >= _viewWidth) break;
+            buffer[row, currentX] = c.ToString();
+            currentX++;
+        }
     }
 }

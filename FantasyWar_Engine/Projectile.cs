@@ -35,10 +35,11 @@ public class Projectile : Entity
     {
         if (other is Player target)
         {
-            target.TakeDamage(Damage);
+            //
         }
         ShouldDestroy = true;
     }
+    
     public void SetType(ProjectileType type)
     {
         Type = type;
@@ -46,15 +47,23 @@ public class Projectile : Entity
         {
             case ProjectileType.Physical:
                 Visual = "💥";
+                Speed = 5;
+                Damage = 50;
                 break;
             case ProjectileType.Electric:
                 Visual = "⚡";
+                Speed = 3;
+                Damage = 25;
                 break;
             case ProjectileType.Fire:
                 Visual = "🔥";
+                Speed = 4;
+                Damage = 30;
                 break;
             case ProjectileType.Ice:
                 Visual = "❄️";
+                Speed = 2;
+                Damage = 20;
                 break;
         }
     }

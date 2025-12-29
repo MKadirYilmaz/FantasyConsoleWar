@@ -94,9 +94,9 @@ class Program
 
         if (movement.X != 0 || movement.Y != 0)
         {
-            localPlayer.AddActorPosition(movement, world);
+            //localPlayer.AddActorPosition(movement, world);
 
-            MovementPacket movePacket = new MovementPacket(localPlayer.Position, localPlayer.Id);
+            MovementPacket movePacket = new MovementPacket(localPlayer.Position + movement, localPlayer.Id);
             
             _client?.TcpClient.SendPacket(movePacket);
         }

@@ -23,18 +23,16 @@ public class PhysicsSystem
 
     public static bool IsWalkable(Location position)
     {
-        // 1. Harita sınırları kontrolü
+        // Map Boundary Check
         if (position.X < 0 || position.Y < 0 || position.X >= World.Instance?.Width ||
             position.Y >= World.Instance?.Height)
             return false;
 
-        // 2. Statik Duvar Kontrolü (Grid)
-        // Grid[x,y] != -1 ise orada duvar vardır.
+        // Static Tile Collision Check
         if (World.Instance?.Grid[position.X, position.Y] != -1)
             return false;
 
-        // 3. Dinamik Entity Kontrolü (Oyuncular vb.)
-        // O karede Solid (katı) bir entity var mı?
+        // Dynamic Entity Collision Check
         Entity? entity = World.Instance?.GetEntityAtPosition(position);
         if (entity != null && entity.IsSolid)
             return false;
@@ -46,11 +44,9 @@ public class PhysicsSystem
     {
         Location nextPos = projectile.Position;
         
-        // Hassas hareket hesaplaması (float biriktirme)
         projectile.DeltaX += projectile.Direction.X * projectile.Speed * deltaTime;
         projectile.DeltaY += projectile.Direction.Y * projectile.Speed * deltaTime;
-
-        // Tam sayı koordinat değişimi var mı?
+        
         int moveX = 0;
         int moveY = 0;
 
@@ -60,46 +56,39 @@ public class PhysicsSystem
         if(projectile.DeltaY >= 1f) { moveY = 1; projectile.DeltaY -= 1f; }
         else if(projectile.DeltaY <= -1f) { moveY = -1; projectile.DeltaY += 1f; }
 
-        // Eğer hareket yoksa çık
+        
         if (moveX == 0 && moveY == 0) return;
 
         nextPos.X += moveX;
         nextPos.Y += moveY;
 
-        // --- ÇARPIŞMA MANTIĞI ---
-
-        // 1. Duvara mı çarptı? (IsWalkable false ise duvardır veya oyuncudur)
-        // Ancak IsWalkable oyuncuya çarpınca da false döner, o yüzden detaylı bakmalıyız.
         
-        // Sınır dışı veya Duvar (Grid) kontrolü
         if (nextPos.X < 0 || nextPos.X >= world.Width || nextPos.Y < 0 || nextPos.Y >= world.Height ||
             world.Grid[nextPos.X, nextPos.Y] != -1)
         {
-            projectile.ShouldDestroy = true; // Duvara çarptı, yok et.
+            projectile.ShouldDestroy = true;
             return;
         }
 
-        // 2. Bir Entity'ye (Oyuncu) mi çarptı?
+        
         Entity? hitEntity = world.GetEntityAtPosition(nextPos);
         
         if (hitEntity != null && hitEntity.IsSolid)
         {
-            // Kendini veya sahibini vurmasın
+            
             if (hitEntity.Id != projectile.OwnerId && hitEntity.Id != projectile.Id)
             {
-                projectile.OnCollide(hitEntity); // Hasar ver
+                projectile.OnCollide(hitEntity); 
                 hitEntity.OnCollide(projectile);
-                projectile.ShouldDestroy = true; // Çarpınca yok et
+                projectile.ShouldDestroy = true;
             }
             else
             {
-                // Sahibinin içinden geçiyorsa pozisyonu güncelle ama yok etme
                 projectile.Position = nextPos;
             }
         }
         else
         {
-            // Boşluk, ilerle
             projectile.Position = nextPos;
         }
     }
