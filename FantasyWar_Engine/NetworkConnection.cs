@@ -106,7 +106,7 @@ public class UdpBroadcaster
             byte[] data = Encoding.UTF8.GetBytes(json);
             
             await _udpClient.SendAsync(data, data.Length, _broadcastEndPoint);
-            Console.WriteLine($"Broadcasted: {packet.PacketType} ({data.Length} bytes)");
+            Console.WriteLine($"Broadcasted: {packet.PacketType} ({data.Length} bytes) {json}");
         }
         catch (Exception ex)
         {

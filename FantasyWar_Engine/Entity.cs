@@ -4,33 +4,61 @@ public class Entity
 {
     public int Id { get; set; }
     public string Name { get; set; }
-    public Location Position { get; set; }
     public string Visual { get; set;  }
     public ConsoleColor Color { get; set; } = ConsoleColor.White;
     
     public bool IsSolid { get; set; } = false;
     public bool ShouldDestroy { get; set; } = false;
-
+    
+    protected Vector Position { get; set; } = new Vector(1, 1);
+    
     public Entity()
     {
         Id = -1;
         Name = "Entity";
-        Position = new Location(0, 0);
+        //SetActorLocation(World.Instance.GetRandomEmptyLocation());
         Visual = "?";
     }
     public Entity(int id)
     {
         Id = id;
         Name = "Entity";
-        Position = new Location(0, 0);
+        //SetActorLocation(World.Instance.GetRandomEmptyLocation());
         Visual = "?";
     }
-    public Entity(int id, string name, Location position, string visual = "?")
+    public Entity(int id, string name, Vector position, string visual = "?")
     {
         Id = id;
         Name = name;
-        Position = position;
+        SetActorLocation(position);
         Visual = visual;
     }
+
+    public Vector GetActorLocation()
+    {
+        return Position;
+    }
+    
+    public bool SetActorLocation(Vector location)
+    {
+        if (World.Instance == null) return false;
+        
+        if (PhysicsSystem.IsWalkable(location))
+        {
+            World.Instance.Grid[Position.X, Position.Y] = -1;
+            Position = location;
+            World.Instance.Grid[Position.X, Position.Y] = Id;
+            return true;
+        }
+        return false;
+    }
+
+    public bool AddActorLocation(Vector movementVector)
+    {
+        Vector newLocation = Position + movementVector;
+        return SetActorLocation(newLocation);
+    }
+    
+    
     public virtual void OnCollide(Entity other) { }
 }

@@ -37,20 +37,22 @@ public abstract class NetworkPacket
 public class LoginPacket : NetworkPacket
 {
     public string PlayerName { get; set; }
+    public Vector SpawnLocation { get; set; }
     
-    public LoginPacket(string playerName, int playerId)
+    public LoginPacket(string playerName, int playerId, Vector spawnLocation)
     {
         PacketType = PacketType.Login;
         PlayerName = playerName;
         PlayerId = playerId;
+        SpawnLocation = spawnLocation;
     }
 }
 
 public class MovementPacket : NetworkPacket
 {
-    public Location MovementVector { get; set; }
+    public Vector MovementVector { get; set; }
     
-    public MovementPacket(Location movementVector, int playerId)
+    public MovementPacket(Vector movementVector, int playerId)
     {
         PacketType = PacketType.Movement;
         MovementVector = movementVector;
@@ -91,9 +93,9 @@ public class WorldPacket : NetworkPacket
 public class ActionPacket : NetworkPacket
 {
     public ProjectileType ProjectileType { get; set; }
-    public Location Direction { get; set; }
+    public Vector Direction { get; set; }
     
-    public ActionPacket(ProjectileType projectileType, int playerId, Location direction)
+    public ActionPacket(ProjectileType projectileType, int playerId, Vector direction)
     {
         PacketType = PacketType.Action;
         ProjectileType = projectileType;

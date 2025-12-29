@@ -6,8 +6,6 @@ public class Player : Entity
     public int MaxHealth = 100;
     public bool IsDead => Health <= 0;
 
-    public event Action<ProjectileType>? OnHit;
-
     public int Resistance { get; set; } = 0;
     public bool CanMove { get; set; } = true;
     public bool IsBurning { get; set; } = false;
@@ -21,7 +19,7 @@ public class Player : Entity
         Id = -1;
         Name = "Player";
         Visual = "😀";
-        Position = new Location(1, 1);
+        SetActorLocation(World.Instance?.GetRandomEmptyLocation() ?? new Vector(1, 1));
         Color = ConsoleColor.White;
 
         IsSolid = true;
@@ -32,16 +30,16 @@ public class Player : Entity
         Id = id;
         Name = "Player";
         Visual = "😀";
-        Position = new Location(1, 1);
+        SetActorLocation(World.Instance?.GetRandomEmptyLocation() ?? new Vector(1, 1));
         Color = ConsoleColor.White;
 
         IsSolid = true;
     }
-    public Player(int id, string name, Location position, string visual = "😀", ConsoleColor color = ConsoleColor.White) : base(id)
+    public Player(int id, string name, Vector position, string visual = "😀", ConsoleColor color = ConsoleColor.White) : base(id, name, position, visual)
     {
         Id = id;
         Name = name;
-        Position = position;
+        SetActorLocation(position);
         Visual = visual;
         Color = color;
         
@@ -83,42 +81,6 @@ public class Player : Entity
         int filledLength = (int)(length * percentage);
         
         return "[" + new string('█', filledLength) + new string('░', length - filledLength) + $"] {Health}/{MaxHealth}";
-    }
-    
-
-    public bool AddActorPosition(Location vector, World? world = null)
-    {
-        Location newPosition = Position + vector;
-        if (world == null)
-        {
-            Position = newPosition;
-            return true;
-        }
-        if (PhysicsSystem.IsWalkable(newPosition))
-        {
-            Position = newPosition;
-            return true;
-        }
-
-        return false;
-    }
-    
-    public bool SetActorPosition(Location newPosition, World? world = null)
-    {
-        if (world == null)
-        {
-            Position = newPosition;
-            return true;
-        }
-        if (PhysicsSystem.IsWalkable(newPosition))
-        {
-            Position = newPosition;
-            return true;
-        }
-        else
-        {
-            return false;
-        }
     }
     
     public override void OnCollide(Entity other)
@@ -176,56 +138,5 @@ public class Player : Entity
         await Task.Delay(3000);
         CanMove = true;
         Resistance = 0;
-    }
-}
-
-public struct Location
-{
-    public int X { get; set; }
-    public int Y { get; set; }
-    
-    public Location(int x, int y)
-    {
-        X = x;
-        Y = y;
-    }
-    public static Location operator +(Location a, Location b)
-    {
-        return new Location(a.X + b.X, a.Y + b.Y);
-    }
-    public static Location operator -(Location a, Location b)
-    {
-        return new Location(a.X - b.X, a.Y - b.Y);
-    }
-    public static Location operator *(Location a, int scalar)
-    {
-        return new Location(a.X * scalar, a.Y * scalar);
-    }
-    public static Location operator /(Location a, int scalar)
-    {
-        return new Location(a.X / scalar, a.Y / scalar);
-    }
-    
-    public static bool operator ==(Location a, Location b)
-    {
-        return a.X == b.X && a.Y == b.Y;
-    }
-
-    public static bool operator !=(Location a, Location b)
-    {
-        return a.X != b.X || a.Y != b.Y;
-    }
-    
-    public override bool Equals(object? obj)
-    {
-        if (obj is Location loc)
-        {
-            return this == loc;
-        }
-        return false;
-    }
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(X, Y);
     }
 }

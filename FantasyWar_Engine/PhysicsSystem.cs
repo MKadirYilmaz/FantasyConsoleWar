@@ -21,7 +21,7 @@ public class PhysicsSystem
         }
     }
 
-    public static bool IsWalkable(Location position)
+    public static bool IsWalkable(Vector position)
     {
         // Map Boundary Check
         if (position.X < 0 || position.Y < 0 || position.X >= World.Instance?.Width ||
@@ -39,10 +39,10 @@ public class PhysicsSystem
 
         return true;
     }
-
+    
     private void MoveProjectile(Projectile projectile, World world, float deltaTime)
     {
-        Location nextPos = projectile.Position;
+        Vector nextPos = projectile.GetActorLocation();
         
         projectile.DeltaX += projectile.Direction.X * projectile.Speed * deltaTime;
         projectile.DeltaY += projectile.Direction.Y * projectile.Speed * deltaTime;
@@ -84,12 +84,12 @@ public class PhysicsSystem
             }
             else
             {
-                projectile.Position = nextPos;
+                projectile.SetActorLocation(nextPos);
             }
         }
         else
         {
-            projectile.Position = nextPos;
+            projectile.SetActorLocation(nextPos);
         }
     }
 }

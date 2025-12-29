@@ -25,11 +25,11 @@ class Program
             
             foreach (Player player in serverWorld.Players.Values)
             {
-                MovementPacket moveUpdate = new MovementPacket(player.Position, player.Id);
+                MovementPacket moveUpdate = new MovementPacket(player.GetActorLocation(), player.Id);
                 server.UdpServer?.BroadcastPacket(moveUpdate);
                 
-                WorldPacket worldPacket = new WorldPacket(serverWorld.Players, serverWorld.Entities);
-                server.UdpServer?.BroadcastPacket(worldPacket);
+                //WorldPacket worldPacket = new WorldPacket(serverWorld.Players, serverWorld.Entities);
+                //server.UdpServer?.BroadcastPacket(worldPacket);
             }
             Thread.Sleep(20); // 50 FPS
         }

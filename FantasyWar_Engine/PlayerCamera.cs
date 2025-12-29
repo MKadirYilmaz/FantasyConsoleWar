@@ -24,8 +24,8 @@ public class PlayerCamera
         {
             return (0, 0);
         }
-        int offsetX = followedPlayer.Position.X - ViewWidth / 2;
-        int offsetY = followedPlayer.Position.Y - ViewHeight / 2;
+        int offsetX = followedPlayer.GetActorLocation().X - ViewWidth / 2;
+        int offsetY = followedPlayer.GetActorLocation().Y - ViewHeight / 2;
 
         // Clamp offsets to world boundaries
         if (offsetX < 0) offsetX = 0;

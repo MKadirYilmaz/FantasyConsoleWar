@@ -52,7 +52,7 @@ public class ServerPackageManager
         Player? player = world.GetPlayer(packet.PlayerId);
         if (player != null && player.CanMove)
         {
-            player.SetActorPosition(packet.MovementVector, world);
+            player.SetActorLocation(packet.MovementVector);
         }
     }
     private void HandleAction(ActionPacket packet, World world)
@@ -64,7 +64,7 @@ public class ServerPackageManager
             Console.WriteLine($"Player {player.Name} performed action {packet.ProjectileType}");
 
             Projectile projectile = EntityManager.CreateProjectile(packet.PlayerId, packet.Direction, 2, 100, packet.ProjectileType);
-            projectile.Position = player.Position + packet.Direction;
+            projectile.SetActorLocation(player.GetActorLocation() + packet.Direction);
         }
     }
 }

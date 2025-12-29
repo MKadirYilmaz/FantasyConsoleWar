@@ -51,9 +51,8 @@ public class ClientPackageHandler
     private void HandleLogin(LoginPacket packet, World world)
     {
         Console.WriteLine($"[Login] Player: {packet.PlayerName}, ID: {packet.PlayerId}");
-
         
-        var newPlayer = new Player(packet.PlayerId, packet.PlayerName, new Location(1, 1));
+        var newPlayer = new Player(packet.PlayerId, packet.PlayerName, packet.SpawnLocation);
         
         if (world.LocalPlayerId == -1)
         {
@@ -84,7 +83,6 @@ public class ClientPackageHandler
             {
                 incomingPlayer.IsLocalPlayer = true;
             }
-            
             
             world.AddOrUpdatePlayer(playerId, incomingPlayer);
             world.AddOrUpdateEntity(playerId, incomingPlayer);
@@ -137,7 +135,7 @@ public class ClientPackageHandler
         if (player != null)
         {
             
-            player.Position = packet.MovementVector;
+            player.SetActorLocation(packet.MovementVector);
             
             // Console.WriteLine($"Player {player.Name} moved to {player.Position}");
         }

@@ -95,21 +95,14 @@ public class TcpGameServer
     private void SetupNewPlayer(TcpConnection clientConn)
     {
         if (_world == null) return;
+
+        Player spawnedPlayer = EntityManager.CreatePlayer("TestPlayer", _world.GetRandomEmptyLocation());
         
-        int newPlayerId = _world.Players.Count + 1;
-        while(_world.Players.ContainsKey(newPlayerId)) newPlayerId++;
+        _connections.TryAdd(spawnedPlayer.Id, clientConn);
         
-        string playerName = "Player" + newPlayerId;
-        Player newPlayer = new Player(newPlayerId, playerName, _world.GetRandomEmptyLocation());
+        Console.WriteLine($"New player {spawnedPlayer.Id} has joined the game.");
         
-        _world.AddOrUpdatePlayer(newPlayerId, newPlayer);
-        _world.AddOrUpdateEntity(newPlayerId, newPlayer);
-        
-        _connections.TryAdd(newPlayerId, clientConn);
-        
-        Console.WriteLine($"New player {playerName} has joined the game.");
-        
-        LoginPacket loginPacket = new LoginPacket(newPlayer.Name, newPlayer.Id);
+        LoginPacket loginPacket = new LoginPacket(spawnedPlayer.Name, spawnedPlayer.Id, spawnedPlayer.GetActorLocation());
         SendPacketTo(loginPacket, clientConn);
         
         WorldPacket worldPacket = new WorldPacket(_world.Players, _world.Entities);

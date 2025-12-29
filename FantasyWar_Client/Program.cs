@@ -4,7 +4,7 @@ using FantasyWar_Engine;
 class Program
 {
     private static Client? _client;
-    private static Location _lastDirecition = new Location(0, 1);
+    private static Vector _lastDirecition = new Vector(0, 1);
     private static ProjectileType _projectileType = ProjectileType.Physical;
     static void Main(string[] args)
     {
@@ -53,24 +53,24 @@ class Program
         Player? localPlayer = world.GetPlayer(world.LocalPlayerId);
         if (localPlayer == null) return;
 
-        Location movement = new Location(0, 0);
+        Vector movement = new Vector(0, 0);
         switch (key)
         {
             case ConsoleKey.W:
-                movement = new Location(0, -1);
-                _lastDirecition = new Location(0, -1);
+                movement = new Vector(0, -1);
+                _lastDirecition = new Vector(0, -1);
                 break;
             case ConsoleKey.S:
-                movement = new Location(0, 1);
-                _lastDirecition = new Location(0, 1);
+                movement = new Vector(0, 1);
+                _lastDirecition = new Vector(0, 1);
                 break;
             case ConsoleKey.A:
-                movement = new Location(-1, 0);
-                _lastDirecition = new Location(-1, 0);
+                movement = new Vector(-1, 0);
+                _lastDirecition = new Vector(-1, 0);
                 break;
             case ConsoleKey.D:
-                movement = new Location(1, 0);
-                _lastDirecition = new Location(1, 0);
+                movement = new Vector(1, 0);
+                _lastDirecition = new Vector(1, 0);
                 break;
             case ConsoleKey.D1:
                 _projectileType = ProjectileType.Physical;
@@ -96,7 +96,7 @@ class Program
         {
             //localPlayer.AddActorPosition(movement, world);
 
-            MovementPacket movePacket = new MovementPacket(localPlayer.Position + movement, localPlayer.Id);
+            MovementPacket movePacket = new MovementPacket(localPlayer.GetActorLocation() + movement, localPlayer.Id);
             
             _client?.TcpClient.SendPacket(movePacket);
         }
