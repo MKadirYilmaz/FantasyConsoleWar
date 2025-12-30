@@ -28,13 +28,9 @@ public class PhysicsSystem
             position.Y >= World.Instance?.Height)
             return false;
 
-        // Static Tile Collision Check
-        if (World.Instance?.Grid[position.X, position.Y] != -1)
-            return false;
-
-        // Dynamic Entity Collision Check
+        // Tile Collision Check
         Entity? entity = World.Instance?.GetEntityAtPosition(position);
-        if (entity != null && entity.IsSolid)
+        if (World.Instance?.Grid[position.X, position.Y] != -1 && entity != null && entity.IsSolid)
             return false;
 
         return true;

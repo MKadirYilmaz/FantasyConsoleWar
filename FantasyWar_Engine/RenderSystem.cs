@@ -60,22 +60,6 @@ public class RenderSystem
                 }
             }
         }
-        
-        /*
-        // Dynamic Entities (Players, Projectiles, Items)
-        foreach (var entity in world.Entities.Values)
-        {
-            
-            int screenX = entity.GetActorLocation().X - offsetX;
-            int screenY = entity.GetActorLocation().Y - offsetY;
-
-            if (screenX >= 0 && screenX < _viewWidth && screenY >= 0 && screenY < _viewHeight)
-            {
-                buffer[screenY + UI_HEIGHT, screenX] = entity.Visual;
-                colorBuffer[screenY + UI_HEIGHT, screenX] = entity.Color;
-            }
-        }
-        */
 
         // Render buffer to console
         Console.SetCursorPosition(0, 0);

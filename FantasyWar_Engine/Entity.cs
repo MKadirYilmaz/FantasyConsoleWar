@@ -7,10 +7,10 @@ public class Entity
     public string Visual { get; set;  }
     public ConsoleColor Color { get; set; } = ConsoleColor.White;
     
-    public bool IsSolid { get; set; } = false;
+    public bool IsSolid { get; set; } = true;
     public bool ShouldDestroy { get; set; } = false;
     
-    protected Vector Position { get; set; } = new Vector(1, 1);
+    public Vector Position { get; set; } = new Vector(1, 1);
     
     public Entity()
     {

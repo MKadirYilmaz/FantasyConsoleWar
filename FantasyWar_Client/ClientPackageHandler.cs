@@ -44,6 +44,15 @@ public class ClientPackageHandler
                 WorldPacket worldPacket = (WorldPacket)packet;
                 HandleWorldStateUpdate(worldPacket, world);
                 break;
+            case PacketType.SpawnOrDestroyPlayer:
+                SpawnOrDestroyPlayerPacket spawnPacket = (SpawnOrDestroyPlayerPacket)packet;
+                HandleSpawnOrDestroyPlayer(spawnPacket, world);
+                break;
+            case PacketType.SpawnOrDestroyProjectile:
+                SpawnOrDestroyProjectilePacket projPacket = (SpawnOrDestroyProjectilePacket)packet;
+                HandleSpawnOrDestroyProjectile(projPacket, world);
+                break;
+                
         }
     }
     
@@ -66,83 +75,66 @@ public class ClientPackageHandler
             Console.WriteLine("-> This is ME!");
         }
         
-        world.AddOrUpdatePlayer(packet.PlayerId, newPlayer);
         world.AddOrUpdateEntity(packet.PlayerId, newPlayer);
     }
 
     private void HandleWorldStateUpdate(WorldPacket packet, World world)
     {
-        // Add or update players
+        // 1. Gelen Player listesini Entities'e işle
         foreach(var kvp in packet.Players)
         {
             int playerId = kvp.Key;
             Player incomingPlayer = kvp.Value;
             
+            if (playerId == world.LocalPlayerId) incomingPlayer.IsLocalPlayer = true;
             
-            if (playerId == world.LocalPlayerId)
-            {
-                incomingPlayer.IsLocalPlayer = true;
-            }
-            
-            world.AddOrUpdatePlayer(playerId, incomingPlayer);
             world.AddOrUpdateEntity(playerId, incomingPlayer);
         }
-
-        foreach (var kvp in world.Players)
+        
+        // 2. Gelen Projectile'leri Entities'e işle
+        foreach (var kvp in packet.Projectiles)
         {
-            int id = kvp.Key;
-            
-            if (!packet.Players.ContainsKey(id))
-            {
-                world.Players.TryRemove(id, out _);
-                world.Entities.TryRemove(id, out _);
-                Console.WriteLine("[System] Player removed: " + kvp.Value.Name);
-            }
+            world.AddOrUpdateEntity(kvp.Key, kvp.Value);
         }
         
-        if (!packet.Entities.IsEmpty)
+        // 3. Gelen diğer Entity'leri Entities'e işle
+        foreach (var kvp in packet.Entities)
         {
-            // Add or update entities
-            foreach (var kvp in packet.Entities)
+            world.AddOrUpdateEntity(kvp.Key, kvp.Value);
+        }
+        
+        // 3. Silinenleri Temizle (Hem Player hem Entity için tek döngü yeterli değil, paketteki her şeyi kontrol etmeliyiz)
+        // Basit yöntem: Pakette olmayanları sil.
+        foreach (var localId in world.Entities.Keys)
+        {
+            bool existsInPacket = packet.Players.ContainsKey(localId) || packet.Entities.ContainsKey(localId) || packet.Projectiles.ContainsKey(localId);
+            
+            if (!existsInPacket)
             {
-                int entityId = kvp.Key;
-                Entity incomingEntity = kvp.Value;
-
-                // Skip players, already handled
-                if (world.Players.ContainsKey(entityId)) continue;
-
-                world.AddOrUpdateEntity(entityId, incomingEntity);
-            }
-
-            // Remove entities that are no longer present
-            foreach (var localEntityId in world.Entities.Keys)
-            {
-                // Skip players, already handled
-                if (world.Players.ContainsKey(localEntityId)) continue;
-
-                if (!packet.Entities.ContainsKey(localEntityId))
-                {
-                    world.Entities.TryRemove(localEntityId, out _);
-                }
+                world.Entities.TryRemove(localId, out _);
             }
         }
+
+        
+        // 4. Grid Senkronizasyonu
+        for (int x = 0; x < world.Width; x++)
+        for (int y = 0; y < world.Height; y++)
+            world.Grid[x, y] = -1;
+        
+        foreach (var entity in world.Entities.Values)
+        {
+            Vector pos = entity.GetActorLocation();
+            if(pos.X >= 0 && pos.X < world.Width && pos.Y >= 0 && pos.Y < world.Height)
+                world.Grid[pos.X, pos.Y] = entity.Id;
+        }
+        
     }
 
     private void HandleMovement(MovementPacket packet, World world)
     {
-        var player = world.GetPlayer(packet.PlayerId);
-
-        if (player != null)
-        {
-            
-            player.SetActorLocation(packet.MovementVector);
-            
-            // Console.WriteLine($"Player {player.Name} moved to {player.Position}");
-        }
-        else
-        {
-            Console.WriteLine($"[Warning] Received move for unknown player: {packet.PlayerId}");
-        }
+        world.Entities.TryGetValue(packet.PlayerId, out Entity? entity);
+        
+        entity?.SetActorLocation(packet.MovementVector);
     }
 
     private void HandleChat(ChatPacket packet, World world)
@@ -153,5 +145,27 @@ public class ClientPackageHandler
         Console.WriteLine($"[Chat] {name}: {packet.Message}");
     }
     
-    
+    private void HandleSpawnOrDestroyPlayer(SpawnOrDestroyPlayerPacket packet, World world)
+    {
+        if (packet.IsSpawn)
+        {
+            world.AddOrUpdateEntity(packet.SpawnedPlayer.Id, packet.SpawnedPlayer);
+        }
+        else
+        {
+            world.Entities.TryRemove(packet.SpawnedPlayer.Id, out _);
+        }
+    }
+
+    private void HandleSpawnOrDestroyProjectile(SpawnOrDestroyProjectilePacket packet, World world)
+    {
+        if (packet.IsSpawn)
+        {
+            world.AddOrUpdateEntity(packet.SpawnedProjectile.Id, packet.SpawnedProjectile);
+        }
+        else
+        {
+            world.Entities.TryRemove(packet.SpawnedProjectile.Id, out _);
+        }
+    }
 }

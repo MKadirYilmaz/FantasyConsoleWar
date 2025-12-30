@@ -6,6 +6,7 @@ namespace FantasyWar_Server;
 public class ServerPackageManager
 {
     private ConcurrentQueue<NetworkPacket> _packetQueue = new ConcurrentQueue<NetworkPacket>();
+    public ConcurrentQueue<NetworkPacket?> PacketSendQueue = new ConcurrentQueue<NetworkPacket?>();
     public void OnDataReceived(NetworkPacket? packet)
     {
         if(packet != null)
@@ -65,6 +66,10 @@ public class ServerPackageManager
 
             Projectile projectile = EntityManager.CreateProjectile(packet.PlayerId, packet.Direction, 2, 100, packet.ProjectileType);
             projectile.SetActorLocation(player.GetActorLocation() + packet.Direction);
+            
+            // Enqueue a packet to notify clients about the new projectile
+            SpawnOrDestroyProjectilePacket spawnPacket = new SpawnOrDestroyProjectilePacket(projectile, true);
+            PacketSendQueue.Enqueue(spawnPacket);
         }
     }
 }

@@ -9,7 +9,9 @@ public enum PacketType : byte
     Movement = 2,
     Chat = 3,
     WorldState = 4,
-    Action = 5
+    Action = 5,
+    SpawnOrDestroyPlayer = 6,
+    SpawnOrDestroyProjectile = 7
 }
 
 public abstract class NetworkPacket
@@ -29,6 +31,8 @@ public abstract class NetworkPacket
             PacketType.Chat => JsonSerializer.Deserialize<ChatPacket>(json),
             PacketType.WorldState => JsonSerializer.Deserialize<WorldPacket>(json),
             PacketType.Action => JsonSerializer.Deserialize<ActionPacket>(json),
+            PacketType.SpawnOrDestroyPlayer => JsonSerializer.Deserialize<SpawnOrDestroyPlayerPacket>(json),
+            PacketType.SpawnOrDestroyProjectile => JsonSerializer.Deserialize<SpawnOrDestroyProjectilePacket>(json),
             _ => null
         };
     }
@@ -79,14 +83,16 @@ public class ChatPacket : NetworkPacket
 
 public class WorldPacket : NetworkPacket
 {
-    public ConcurrentDictionary<int, Player> Players { get; set; }
     public ConcurrentDictionary<int, Entity> Entities { get; set; }
+    public ConcurrentDictionary<int, Player> Players { get; set; }
+    public ConcurrentDictionary<int, Projectile> Projectiles { get; set; }
 
-    public WorldPacket(ConcurrentDictionary<int, Player> players, ConcurrentDictionary<int, Entity> entities)
+    public WorldPacket(ConcurrentDictionary<int, Entity> entities, ConcurrentDictionary<int, Player> players, ConcurrentDictionary<int, Projectile> projectiles)
     {
         PacketType = PacketType.WorldState;
-        Players = players;
         Entities = entities;
+        Players = players;
+        Projectiles = projectiles;
     }
 }
 
@@ -101,5 +107,31 @@ public class ActionPacket : NetworkPacket
         ProjectileType = projectileType;
         PlayerId = playerId;
         Direction = direction;
+    }
+}
+
+public class SpawnOrDestroyPlayerPacket : NetworkPacket
+{
+    public Player SpawnedPlayer { get; set; }
+    public bool IsSpawn { get; set; }
+
+    public SpawnOrDestroyPlayerPacket(Player spawnedPlayer, bool isSpawn)
+    {
+        PacketType = PacketType.SpawnOrDestroyPlayer;
+        SpawnedPlayer = spawnedPlayer;
+        IsSpawn = isSpawn;
+    }
+}
+
+public class SpawnOrDestroyProjectilePacket : NetworkPacket
+{
+    public Projectile SpawnedProjectile { get; set; }
+    public bool IsSpawn { get; set; }
+
+    public SpawnOrDestroyProjectilePacket(Projectile spawnedProjectile, bool isSpawn)
+    {
+        PacketType = PacketType.SpawnOrDestroyProjectile;
+        SpawnedProjectile = spawnedProjectile;
+        IsSpawn = isSpawn;
     }
 }

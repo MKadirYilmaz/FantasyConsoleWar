@@ -80,13 +80,16 @@ public class TcpGameServer
 
             if (_world != null)
             {
-                _world.Players.TryRemove(playerId, out _);
+                Player? exitedPlayer = _world.GetPlayer(playerId);
+                if(exitedPlayer == null) return;
+                
+                // Notify all other clients about the player leaving
+                SpawnOrDestroyPlayerPacket destroyPacket = new SpawnOrDestroyPlayerPacket(exitedPlayer, false);
+                BroadcastPacket(destroyPacket);
+                
                 _world.Entities.TryRemove(playerId, out _);
                 
                 Console.WriteLine($"Player {playerId} has disconnected and been removed from the game.");
-                
-                WorldPacket worldPacket = new WorldPacket(_world.Players, _world.Entities);
-                BroadcastPacket(worldPacket);
             }
         }
         
@@ -105,8 +108,24 @@ public class TcpGameServer
         LoginPacket loginPacket = new LoginPacket(spawnedPlayer.Name, spawnedPlayer.Id, spawnedPlayer.GetActorLocation());
         SendPacketTo(loginPacket, clientConn);
         
-        WorldPacket worldPacket = new WorldPacket(_world.Players, _world.Entities);
-        BroadcastPacket(worldPacket);
+        var playersDict = new ConcurrentDictionary<int, Player>(
+            _world.Entities.Values.OfType<Player>().ToDictionary(p => p.Id, p => p)
+        );
+        var projDict = new ConcurrentDictionary<int, Projectile>(
+            _world.Entities.Values.OfType<Projectile>().ToDictionary(p => p.Id, p => p)
+        );
+                
+        var entitiesDict = new ConcurrentDictionary<int, Entity>(
+            _world.Entities.Values.Where(e => !(e is Player) && !(e is Projectile)).ToDictionary(e => e.Id, e => e)
+        );
+        
+        // Send the current world state to the new player
+        WorldPacket worldPacket = new WorldPacket(entitiesDict, playersDict, projDict);
+        SendPacketTo(worldPacket, clientConn);
+        
+        // Notify all other clients about the new player
+        SpawnOrDestroyPlayerPacket spawnPacket = new SpawnOrDestroyPlayerPacket(spawnedPlayer, true);
+        BroadcastPacket(spawnPacket);
     }
 }
 

@@ -24,7 +24,6 @@ public class EntityManager
     {
         Player player = new Player(_nextEntityId, name, position, visual, color);
         World.Instance?.AddOrUpdateEntity(_nextEntityId, player);
-        World.Instance?.AddOrUpdatePlayer(_nextEntityId, player);
         _nextEntityId++;
         return player;
     }

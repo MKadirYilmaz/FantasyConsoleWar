@@ -58,7 +58,6 @@ public class Player : Entity
         
         if (Health <= 0)
         {
-            World.Instance?.Players.TryRemove(Id, out _);
             World.Instance?.Entities.TryRemove(Id, out _);
         }
     }

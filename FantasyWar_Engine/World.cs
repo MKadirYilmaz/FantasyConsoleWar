@@ -10,8 +10,7 @@ public class World
 
     public static World? Instance { get; private set; }
     
-    public ConcurrentDictionary<int, Player> Players = new();
-    public ConcurrentDictionary<int, Entity> Entities = new();
+    public ConcurrentDictionary<int, Entity> Entities { get; set; } = new();
 
     public bool HasAuthority { get; private set; } = false;
     
@@ -42,6 +41,8 @@ public class World
         
         if (Entities.ContainsKey(id))
         {
+            Vector oldLocation = Entities[id].GetActorLocation();
+            Grid[oldLocation.X, oldLocation.Y] = -1;
             Entities[id] = entity;
         }
         else
@@ -49,19 +50,26 @@ public class World
             Entities.TryAdd(id, entity);
         }
     }
-
-    public void AddOrUpdatePlayer(int id, Player player)
+    
+    public void RemoveEntity(int id)
     {
-        if (Players.ContainsKey(id))
+        if (Entities.TryRemove(id, out Entity? entity))
         {
-            Players[id] = player;
+            Vector location = entity.GetActorLocation();
+            Grid[location.X, location.Y] = -1;
         }
-        else Players.TryAdd(id, player);
     }
 
     public Player? GetPlayer(int id)
     {
-        return Players.GetValueOrDefault(id);
+        Player? player = Entities.GetValueOrDefault(id) as Player;
+        return player;
+    }
+
+    public Projectile? GetProjectile(int id)
+    {
+        Projectile? projectile = Entities.GetValueOrDefault(id) as Projectile;
+        return projectile;
     }
 
     public Entity? GetEntityAtPosition(Vector location)
