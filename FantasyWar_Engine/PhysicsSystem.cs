@@ -2,8 +2,10 @@
 
 public class PhysicsSystem
 {
-    public void Update(World world, float deltaTime = 0.02f)
+    public List<Entity> Update(World world, float deltaTime = 0.02f)
     {
+        List<Entity> destroyedEntities = new List<Entity>();
+        
         foreach (var entity in world.Entities.Values)
         {
             if (entity is Projectile projectile)
@@ -16,9 +18,16 @@ public class PhysicsSystem
         {
             if (entity.ShouldDestroy)
             {
-                world.Entities.TryRemove(entity.Id, out _);
+                destroyedEntities.Add(entity);
             }
         }
+
+        foreach (var entity in destroyedEntities)
+        {
+            world.RemoveEntity(entity.Id);
+        }
+
+        return destroyedEntities;
     }
 
     public static bool IsWalkable(Vector position)
@@ -29,8 +38,7 @@ public class PhysicsSystem
             return false;
 
         // Tile Collision Check
-        Entity? entity = World.Instance?.GetEntityAtPosition(position);
-        if (World.Instance?.Grid[position.X, position.Y] != -1 && entity != null && entity.IsSolid)
+        if (World.Instance?.CollisionGrid[position.X, position.Y] != -1)
             return false;
 
         return true;
@@ -60,7 +68,7 @@ public class PhysicsSystem
 
         
         if (nextPos.X < 0 || nextPos.X >= world.Width || nextPos.Y < 0 || nextPos.Y >= world.Height ||
-            world.Grid[nextPos.X, nextPos.Y] != -1)
+            world.CollisionGrid[nextPos.X, nextPos.Y] != -1)
         {
             projectile.ShouldDestroy = true;
             return;
@@ -74,7 +82,7 @@ public class PhysicsSystem
             
             if (hitEntity.Id != projectile.OwnerId && hitEntity.Id != projectile.Id)
             {
-                projectile.OnCollide(hitEntity); 
+                projectile.OnCollide(hitEntity);
                 hitEntity.OnCollide(projectile);
                 projectile.ShouldDestroy = true;
             }

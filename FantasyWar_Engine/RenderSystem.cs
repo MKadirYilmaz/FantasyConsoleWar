@@ -28,7 +28,7 @@ public class RenderSystem
         DrawUI(localPlayer, buffer, colorBuffer);
         
         var (offsetX, offsetY) = camera.GetViewOffset(world);
-
+        
         // Draw static world (walls, ground)
         for (int y = 0; y < _viewHeight; y++)
         {
@@ -46,7 +46,7 @@ public class RenderSystem
                     continue;
                 }
                 
-                int entityId = world.Grid[worldX, worldY];
+                int entityId = world.RenderGrid[worldX, worldY];
                 
                 if (entityId != -1 && world.Entities.TryGetValue(entityId, out Entity? wall))
                 {
@@ -60,6 +60,7 @@ public class RenderSystem
                 }
             }
         }
+        
 
         // Render buffer to console
         Console.SetCursorPosition(0, 0);

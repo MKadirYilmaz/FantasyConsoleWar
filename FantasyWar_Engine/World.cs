@@ -6,7 +6,8 @@ public class World
 {
     public int Width { get; }
     public int Height { get; }
-    public int[,] Grid { get; }
+    public int[,] CollisionGrid { get; }
+    public int[,] RenderGrid { get; }
 
     public static World? Instance { get; private set; }
     
@@ -30,25 +31,41 @@ public class World
         }
         Width = width;
         Height = height;
-        Grid = new int[width, height];
+        CollisionGrid = new int[width, height];
+        FillGrid(CollisionGrid, -1);
+        RenderGrid = new int[width, height];
+        FillGrid(RenderGrid, -1);
         GenerateSimpleMap();
+    }
+    
+    private static void FillGrid(int[,] grid, int value)
+    {
+        int w = grid.GetLength(0);
+        int h = grid.GetLength(1);
+        for (int y = 0; y < h; y++)
+        for (int x = 0; x < w; x++)
+            grid[x, y] = value;
     }
     
     public void AddOrUpdateEntity(int id, Entity entity)
     {
-        Vector location = entity.GetActorLocation();
-        Grid[location.X, location.Y] = id;
-        
         if (Entities.ContainsKey(id))
         {
             Vector oldLocation = Entities[id].GetActorLocation();
-            Grid[oldLocation.X, oldLocation.Y] = -1;
+            RenderGrid[oldLocation.X, oldLocation.Y] = -1;
+            if(Entities[id].IsSolid)
+                CollisionGrid[oldLocation.X, oldLocation.Y] = -1;
             Entities[id] = entity;
         }
         else
         {
             Entities.TryAdd(id, entity);
         }
+        
+        Vector location = entity.GetActorLocation();
+        RenderGrid[location.X, location.Y] = id;
+        if(entity.IsSolid)
+            CollisionGrid[location.X, location.Y] = id;
     }
     
     public void RemoveEntity(int id)
@@ -56,8 +73,26 @@ public class World
         if (Entities.TryRemove(id, out Entity? entity))
         {
             Vector location = entity.GetActorLocation();
-            Grid[location.X, location.Y] = -1;
+            RenderGrid[location.X, location.Y] = -1;
+            if(entity.IsSolid)
+                CollisionGrid[location.X, location.Y] = -1;
         }
+    }
+    
+    public void SetGridValue(Vector newCoordinate, Vector oldCoordinate, int entityId, bool isSolid = false)
+    {
+        RenderGrid[oldCoordinate.X, oldCoordinate.Y] = -1;
+        if (isSolid)
+        {
+            CollisionGrid[oldCoordinate.X, oldCoordinate.Y] = -1;
+        }
+        
+        RenderGrid[newCoordinate.X, newCoordinate.Y] = entityId;
+        if (isSolid)
+        {
+            CollisionGrid[newCoordinate.X, newCoordinate.Y] = entityId;
+        }
+        
     }
 
     public Player? GetPlayer(int id)
@@ -88,21 +123,17 @@ public class World
         // Initialize grid with empty spaces
         for (int y = 0; y < Height; y++)
             for (int x = 0; x < Width; x++)
-                Grid[x, y] = -1;
+                CollisionGrid[x, y] = -1;
 
         for(int y = 0; y < Height; y++)
         {
             Entity wallLeft = EntityManager.CreateEntity("Wall", "🪨", new Vector(0, y));
             Entity wallRight = EntityManager.CreateEntity("Wall", "🪨", new Vector(Width - 1, y));
-            Grid[0, y] = wallLeft.Id; // Left wall
-            Grid[Width - 1, y] = wallRight.Id; // Right wall
         }
         for(int x = 0; x < Width; x++)
         {
             Entity wallUp = EntityManager.CreateEntity("Wall", "🪨", new Vector(x, 0));
             Entity wallDown = EntityManager.CreateEntity("Wall", "🪨", new Vector(x, Height - 1));
-            Grid[x, 0] = wallUp.Id; // Up wall
-            Grid[x, Height - 1] = wallDown.Id; // Down wall
         }
         
         // Add some random walls
@@ -112,7 +143,6 @@ public class World
             int rx = rnd.Next(1, Width - 1);
             int ry = rnd.Next(1, Height - 1);
             Entity wall = EntityManager.CreateEntity("Wall", "🪨", new Vector(rx, ry));
-            Grid[rx, ry] = wall.Id; 
         }
     }
     
@@ -124,7 +154,7 @@ public class World
         {
             x = rnd.Next(1, Width - 1);
             y = rnd.Next(1, Height - 1);
-        } while (Grid[x, y] == -1);
+        } while (CollisionGrid[x, y] == -1);
         
         return new Vector(x, y);
     }

@@ -66,6 +66,7 @@ public class ServerPackageManager
 
             Projectile projectile = EntityManager.CreateProjectile(packet.PlayerId, packet.Direction, 2, 100, packet.ProjectileType);
             projectile.SetActorLocation(player.GetActorLocation() + packet.Direction);
+            projectile.IsSolid = false;
             
             // Enqueue a packet to notify clients about the new projectile
             SpawnOrDestroyProjectilePacket spawnPacket = new SpawnOrDestroyProjectilePacket(projectile, true);

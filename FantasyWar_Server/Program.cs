@@ -34,7 +34,16 @@ class Program
                 }
             }
 
-            physicsSystem.Update(serverWorld, 0.02f); // Assuming 50 FPS, so deltaTime is 0.02 seconds
+            var destroyedEntities = physicsSystem.Update(serverWorld, 0.02f); // Assuming 50 FPS, so deltaTime is 0.02 seconds
+
+            foreach (var entity in destroyedEntities)
+            {
+                if (entity is Projectile projectile)
+                {
+                    SpawnOrDestroyProjectilePacket destroyPacket = new SpawnOrDestroyProjectilePacket(projectile, false);
+                    server.TcpServer?.BroadcastPacket(destroyPacket);
+                }
+            }
             
             foreach (Entity entity in serverWorld.Entities.Values)
             {

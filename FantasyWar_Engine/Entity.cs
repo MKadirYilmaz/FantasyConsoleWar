@@ -45,9 +45,9 @@ public class Entity
         
         if (PhysicsSystem.IsWalkable(location))
         {
-            World.Instance.Grid[Position.X, Position.Y] = -1;
+            
+            World.Instance.SetGridValue(location, Position, Id, IsSolid);
             Position = location;
-            World.Instance.Grid[Position.X, Position.Y] = Id;
             return true;
         }
         return false;
