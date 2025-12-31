@@ -7,6 +7,21 @@ public class ClientPackageHandler
 {
     private ConcurrentQueue<NetworkPacket> _packetQueue = new ConcurrentQueue<NetworkPacket>();
     
+    public List<LobbyPlayerData> LobbyPlayers { get; private set; } = new();
+    public bool GameStarted { get; private set; } = false;
+    public bool IsGameOver { get; private set; } = false;
+    public List<LobbyPlayerData> Rankings { get; private set; } = new();
+    public bool BackToLobby { get; private set; } = false;
+
+    public void Reset()
+    {
+        GameStarted = false;
+        IsGameOver = false;
+        Rankings.Clear();
+        BackToLobby = false;
+        LobbyPlayers.Clear();
+    }
+
     public void OnDataReceived(NetworkPacket? packet)
     {
         if(packet != null)
@@ -56,6 +71,20 @@ public class ClientPackageHandler
                 PlayerStatusPacket statusPacket = (PlayerStatusPacket)packet;
                 HandlePlayerStatus(statusPacket, world);
                 break;
+            case PacketType.LobbyState:
+                LobbyStatePacket lobbyPacket = (LobbyStatePacket)packet;
+                LobbyPlayers = lobbyPacket.Players;
+                UpdateWorldFromLobbyState(lobbyPacket, world);
+                if (GameStarted) BackToLobby = true; // If we receive lobby state while game is started, it means we are back to lobby
+                break;
+            case PacketType.GameStart:
+                GameStarted = true;
+                break;
+            case PacketType.GameOver:
+                GameOverPacket gameOverPacket = (GameOverPacket)packet;
+                IsGameOver = true;
+                Rankings = gameOverPacket.Rankings;
+                break;
                 
         }
     }
@@ -91,7 +120,7 @@ public class ClientPackageHandler
             Player incomingPlayer = kvp.Value;
 
             if (playerId == world.LocalPlayerId) incomingPlayer.IsLocalPlayer = true;
-            incomingPlayer.IsSolid = true;
+            if (!incomingPlayer.IsWaiting) incomingPlayer.IsSolid = true;
 
             world.AddOrUpdateEntity(playerId, incomingPlayer);
         }
@@ -181,6 +210,20 @@ public class ClientPackageHandler
             player.Resistance = packet.Resistance;
             player.CanMove = packet.CanMove;
             player.IsBurning = packet.IsBurning;
+        }
+    }
+
+    private void UpdateWorldFromLobbyState(LobbyStatePacket packet, World world)
+    {
+        foreach (var lobbyPlayer in packet.Players)
+        {
+            Player? player = world.GetPlayer(lobbyPlayer.Id);
+            if (player != null)
+            {
+                player.Name = lobbyPlayer.Name;
+                player.SetVisual(lobbyPlayer.Visual);
+                player.IsReady = lobbyPlayer.IsReady;
+            }
         }
     }
 

@@ -12,7 +12,12 @@ public enum PacketType : byte
     Action = 5,
     SpawnOrDestroyPlayer = 6,
     SpawnOrDestroyProjectile = 7,
-    PlayerStatus = 8
+    PlayerStatus = 8,
+    LobbyState = 9,
+    PlayerReady = 10,
+    UpdatePlayerInfo = 11,
+    GameStart = 12,
+    GameOver = 13
 }
 
 public abstract class NetworkPacket
@@ -35,8 +40,77 @@ public abstract class NetworkPacket
             PacketType.SpawnOrDestroyPlayer => JsonSerializer.Deserialize<SpawnOrDestroyPlayerPacket>(json),
             PacketType.SpawnOrDestroyProjectile => JsonSerializer.Deserialize<SpawnOrDestroyProjectilePacket>(json),
             PacketType.PlayerStatus => JsonSerializer.Deserialize<PlayerStatusPacket>(json),
+            PacketType.LobbyState => JsonSerializer.Deserialize<LobbyStatePacket>(json),
+            PacketType.PlayerReady => JsonSerializer.Deserialize<PlayerReadyPacket>(json),
+            PacketType.UpdatePlayerInfo => JsonSerializer.Deserialize<UpdatePlayerInfoPacket>(json),
+            PacketType.GameStart => JsonSerializer.Deserialize<GameStartPacket>(json),
+            PacketType.GameOver => JsonSerializer.Deserialize<GameOverPacket>(json),
             _ => null
         };
+    }
+}
+
+public class LobbyPlayerData
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "Unknown";
+    public string Visual { get; set; } = "?";
+    public bool IsReady { get; set; }
+}
+
+public class GameOverPacket : NetworkPacket
+{
+    public List<LobbyPlayerData> Rankings { get; set; }
+
+    public GameOverPacket(List<LobbyPlayerData> rankings)
+    {
+        PacketType = PacketType.GameOver;
+        Rankings = rankings;
+    }
+}
+
+public class LobbyStatePacket : NetworkPacket
+{
+    public List<LobbyPlayerData> Players { get; set; }
+
+    public LobbyStatePacket(List<LobbyPlayerData> players)
+    {
+        PacketType = PacketType.LobbyState;
+        Players = players;
+    }
+}
+
+public class PlayerReadyPacket : NetworkPacket
+{
+    public bool IsReady { get; set; }
+
+    public PlayerReadyPacket(int playerId, bool isReady)
+    {
+        PacketType = PacketType.PlayerReady;
+        PlayerId = playerId;
+        IsReady = isReady;
+    }
+}
+
+public class UpdatePlayerInfoPacket : NetworkPacket
+{
+    public string Name { get; set; }
+    public string Visual { get; set; }
+
+    public UpdatePlayerInfoPacket(int playerId, string name, string visual)
+    {
+        PacketType = PacketType.UpdatePlayerInfo;
+        PlayerId = playerId;
+        Name = name;
+        Visual = visual;
+    }
+}
+
+public class GameStartPacket : NetworkPacket
+{
+    public GameStartPacket()
+    {
+        PacketType = PacketType.GameStart;
     }
 }
 

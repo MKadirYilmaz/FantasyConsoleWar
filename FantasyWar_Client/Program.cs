@@ -30,79 +30,123 @@ class Program
             packageHandler.ProcessPackets(gameWorld);
             Thread.Sleep(100);
         }
-        int viewHeight = gameWorld.LocalCamera == null ? 20 : gameWorld.LocalCamera.ViewHeight;
-        int viewWidth = gameWorld.LocalCamera == null ? 50 : gameWorld.LocalCamera.ViewWidth;
-        RenderSystem renderSystem = new RenderSystem(viewWidth, viewHeight);
         
-        bool isRunning = true;
-        while (isRunning)
+        while (true)
         {
-            if (Console.KeyAvailable)
+            // Reset state for new game cycle
+            packageHandler.Reset();
+            
+            // Start Main Menu
+            MainMenu mainMenu = new MainMenu(_client, gameWorld, packageHandler);
+            mainMenu.Run();
+            
+            int viewHeight = gameWorld.LocalCamera == null ? 20 : gameWorld.LocalCamera.ViewHeight;
+            int viewWidth = gameWorld.LocalCamera == null ? 50 : gameWorld.LocalCamera.ViewWidth;
+            RenderSystem renderSystem = new RenderSystem(viewWidth, viewHeight);
+            
+            bool isRunning = true;
+            while (isRunning)
             {
-                ConsoleKeyInfo keyInfo = Console.ReadKey(true);
-                ConsoleKey key = keyInfo.Key;
-                
-                if(key == ConsoleKey.Escape)
+                if (packageHandler.BackToLobby)
                 {
-                    if (_isChatting)
-                    {
-                        _isChatting = false;
-                        _currentChatMessage = "";
-                    }
-                    else
-                    {
-                        isRunning = false;
-                    }
+                    isRunning = false;
+                    continue;
                 }
-                else if (_isChatting)
+
+                if (packageHandler.IsGameOver)
                 {
-                    if (key == ConsoleKey.Enter)
+                    RenderWinScreen(packageHandler.Rankings);
+                    packageHandler.ProcessPackets(gameWorld); // Keep processing to receive LobbyState/BackToLobby
+                    Thread.Sleep(100);
+                    continue;
+                }
+
+                if (Console.KeyAvailable)
+                {
+                    ConsoleKeyInfo keyInfo = Console.ReadKey(true);
+                    ConsoleKey key = keyInfo.Key;
+                    
+                    if(key == ConsoleKey.Escape)
                     {
-                        if (!string.IsNullOrWhiteSpace(_currentChatMessage))
+                        if (_isChatting)
                         {
-                            ChatPacket chatPacket = new ChatPacket(_currentChatMessage, gameWorld.LocalPlayerId);
-                            _client?.TcpClient.SendPacket(chatPacket);
+                            _isChatting = false;
                             _currentChatMessage = "";
                         }
-                        _isChatting = false;
-                    }
-                    else if (key == ConsoleKey.Backspace)
-                    {
-                        if (_currentChatMessage.Length > 0)
+                        else
                         {
-                            _currentChatMessage = _currentChatMessage.Substring(0, _currentChatMessage.Length - 1);
+                            //isRunning = false; // Don't exit app, maybe just open menu? For now, disable exit
+                        }
+                    }
+                    else if (_isChatting)
+                    {
+                        if (key == ConsoleKey.Enter)
+                        {
+                            if (!string.IsNullOrWhiteSpace(_currentChatMessage))
+                            {
+                                ChatPacket chatPacket = new ChatPacket(_currentChatMessage, gameWorld.LocalPlayerId);
+                                _client?.TcpClient.SendPacket(chatPacket);
+                                _currentChatMessage = "";
+                            }
+                            _isChatting = false;
+                        }
+                        else if (key == ConsoleKey.Backspace)
+                        {
+                            if (_currentChatMessage.Length > 0)
+                            {
+                                _currentChatMessage = _currentChatMessage.Substring(0, _currentChatMessage.Length - 1);
+                            }
+                        }
+                        else
+                        {
+                            if (keyInfo.KeyChar >= ' ') // Ignore control chars
+                            {
+                                _currentChatMessage += keyInfo.KeyChar;
+                            }
                         }
                     }
                     else
                     {
-                        if (keyInfo.KeyChar >= ' ') // Ignore control chars
+                        if (key == ConsoleKey.T)
                         {
-                            _currentChatMessage += keyInfo.KeyChar;
+                            _isChatting = true;
+                            _currentChatMessage = "";
+                        }
+                        else
+                        {
+                            HandleInput(key, gameWorld);
                         }
                     }
                 }
-                else
+                
+                packageHandler.ProcessPackets(gameWorld);
+                
+                if (!packageHandler.IsGameOver)
                 {
-                    if (key == ConsoleKey.T)
-                    {
-                        _isChatting = true;
-                        _currentChatMessage = "";
-                    }
-                    else
-                    {
-                        HandleInput(key, gameWorld);
-                    }
+                    Render(gameWorld, renderSystem);
                 }
+                
+                Thread.Sleep(1000 / TARGET_FRAME_RATE);
             }
-            
-            packageHandler.ProcessPackets(gameWorld);
-            
-            Render(gameWorld, renderSystem);
-            
-            Thread.Sleep(1000 / TARGET_FRAME_RATE);
         }
 
     }
+
+    static void RenderWinScreen(List<LobbyPlayerData> rankings)
+    {
+        Console.SetCursorPosition(0, 0);
+        Console.WriteLine("=== GAME OVER ===");
+        Console.WriteLine("-----------------");
+        Console.WriteLine("Rankings:");
+        for (int i = 0; i < rankings.Count; i++)
+        {
+            string prefix = (i == 0) ? "👑 WINNER" : $"#{i + 1}";
+            Console.WriteLine($"{prefix}: {rankings[i].Visual} {rankings[i].Name}");
+        }
+        Console.WriteLine("-----------------");
+        Console.WriteLine("Returning to lobby in a few seconds...");
+    }
+
     static void HandleInput(ConsoleKey key, World world)
     {
         Player? localPlayer = world.GetPlayer(world.LocalPlayerId);

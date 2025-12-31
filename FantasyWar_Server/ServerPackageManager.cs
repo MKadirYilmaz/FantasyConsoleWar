@@ -46,6 +46,33 @@ public class ServerPackageManager
                 ActionPacket actionPacket = (ActionPacket)packet;
                 HandleAction(actionPacket, world);
                 break;
+            case PacketType.PlayerReady:
+                PlayerReadyPacket readyPacket = (PlayerReadyPacket)packet;
+                HandlePlayerReady(readyPacket, world);
+                break;
+            case PacketType.UpdatePlayerInfo:
+                UpdatePlayerInfoPacket infoPacket = (UpdatePlayerInfoPacket)packet;
+                HandleUpdatePlayerInfo(infoPacket, world);
+                break;
+        }
+    }
+
+    private void HandlePlayerReady(PlayerReadyPacket packet, World world)
+    {
+        Player? player = world.GetPlayer(packet.PlayerId);
+        if (player != null)
+        {
+            player.IsReady = packet.IsReady;
+        }
+    }
+
+    private void HandleUpdatePlayerInfo(UpdatePlayerInfoPacket packet, World world)
+    {
+        Player? player = world.GetPlayer(packet.PlayerId);
+        if (player != null)
+        {
+            player.Name = packet.Name;
+            player.SetVisual(packet.Visual);
         }
     }
 

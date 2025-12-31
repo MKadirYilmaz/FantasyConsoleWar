@@ -25,6 +25,7 @@ public class TcpGameServer
     private ConcurrentDictionary<int, TcpConnection> _connections = new();
 
     private World? _world;
+    public bool IsGameRunning { get; set; } = false;
 
     public void Start(int port, ServerPackageManager packageHandler, World world)
     {
@@ -101,9 +102,16 @@ public class TcpGameServer
 
         Player spawnedPlayer = EntityManager.CreatePlayer("TestPlayer", _world.GetRandomEmptyLocation());
         
+        if (IsGameRunning)
+        {
+            spawnedPlayer.IsWaiting = true;
+            spawnedPlayer.IsSolid = false;
+            spawnedPlayer.Visual = "👻";
+        }
+        
         _connections.TryAdd(spawnedPlayer.Id, clientConn);
         
-        Console.WriteLine($"New player {spawnedPlayer.Id} has joined the game.");
+        Console.WriteLine($"New player {spawnedPlayer.Id} has joined the game. (Waiting: {spawnedPlayer.IsWaiting})");
         
         LoginPacket loginPacket = new LoginPacket(spawnedPlayer.Name, spawnedPlayer.Id, spawnedPlayer.GetActorLocation());
         SendPacketTo(loginPacket, clientConn);
@@ -123,9 +131,22 @@ public class TcpGameServer
         WorldPacket worldPacket = new WorldPacket(entitiesDict, playersDict, projDict);
         SendPacketTo(worldPacket, clientConn);
         
-        // Notify all other clients about the new player
-        SpawnOrDestroyPlayerPacket spawnPacket = new SpawnOrDestroyPlayerPacket(spawnedPlayer, true);
-        BroadcastPacket(spawnPacket);
+        if (spawnedPlayer.IsWaiting)
+        {
+            ChatPacket waitMsg = new ChatPacket("Game in progress. You are waiting for the next round...", -1);
+            SendPacketTo(waitMsg, clientConn);
+        }
+        else
+        {
+            // Notify all other clients about the new player
+            SpawnOrDestroyPlayerPacket spawnPacket = new SpawnOrDestroyPlayerPacket(spawnedPlayer, true);
+            BroadcastPacket(spawnPacket);
+        }
+    }
+
+    public bool IsConnected(int playerId)
+    {
+        return _connections.ContainsKey(playerId);
     }
 }
 
@@ -143,6 +164,4 @@ public class UdpServer
         Task.Run(() => Broadcaster.BroadcastStateAsync(packet));
     }
 }
-
-
 

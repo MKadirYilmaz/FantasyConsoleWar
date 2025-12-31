@@ -14,6 +14,8 @@ public class Player : Entity
     
     
     public bool IsLocalPlayer { get; set; } = false;
+    public bool IsReady { get; set; } = false;
+    public bool IsWaiting { get; set; } = false;
     public Player() : base()
     {
         Id = -1;
