@@ -6,6 +6,9 @@ class Program
     private static Client? _client;
     private static Vector _lastDirecition = new Vector(0, 1);
     private static ProjectileType _projectileType = ProjectileType.Physical;
+    
+    private const int TARGET_FRAME_RATE = 60;
+    
     static void Main(string[] args)
     {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -44,7 +47,7 @@ class Program
             
             Render(gameWorld, renderSystem);
             
-            Thread.Sleep(20); // 50 FPS
+            Thread.Sleep(1000 / TARGET_FRAME_RATE);
         }
 
     }

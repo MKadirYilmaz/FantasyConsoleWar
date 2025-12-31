@@ -58,7 +58,7 @@ public class Player : Entity
         
         if (Health <= 0)
         {
-            World.Instance?.Entities.TryRemove(Id, out _);
+            ShouldDestroy = true;
         }
     }
     

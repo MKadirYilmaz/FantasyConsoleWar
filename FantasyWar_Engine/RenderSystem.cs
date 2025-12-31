@@ -94,7 +94,7 @@ public class RenderSystem
         }
         
         string healthBar = player.GetHealthBar(10); // [████░░] 80/100
-        string info = $"{player.Name} (ID:{player.Id}) {healthBar}";
+        string info = $"{player.Name} (ID:{player.Id}) {healthBar} {player.Health}";
         WriteToBuffer(buffer, 0, 1, info);
 
         // Status Effects

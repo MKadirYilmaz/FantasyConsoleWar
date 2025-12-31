@@ -52,6 +52,10 @@ public class ClientPackageHandler
                 SpawnOrDestroyProjectilePacket projPacket = (SpawnOrDestroyProjectilePacket)packet;
                 HandleSpawnOrDestroyProjectile(projPacket, world);
                 break;
+            case PacketType.PlayerStatus:
+                PlayerStatusPacket statusPacket = (PlayerStatusPacket)packet;
+                HandlePlayerStatus(statusPacket, world);
+                break;
                 
         }
     }
@@ -161,4 +165,18 @@ public class ClientPackageHandler
             world.RemoveEntity(packet.SpawnedProjectile.Id);
         }
     }
+
+    private void HandlePlayerStatus(PlayerStatusPacket packet, World world)
+    {
+        //Console.WriteLine($"[Status] ID:{packet.PlayerId} HP:{packet.Health}");
+        Player? player = world.GetPlayer(packet.PlayerId);
+        if (player != null)
+        {
+            player.Health = packet.Health;
+            player.Resistance = packet.Resistance;
+            player.CanMove = packet.CanMove;
+            player.IsBurning = packet.IsBurning;
+        }
+    }
+
 }

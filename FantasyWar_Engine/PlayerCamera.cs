@@ -3,8 +3,8 @@
 public class PlayerCamera
 { 
     private int _followedPlayerId;
-    public int ViewWidth { get; private set; } = 32;
-    public int ViewHeight { get; private set; } = 18;
+    public int ViewWidth { get; private set; } = 48;
+    public int ViewHeight { get; private set; } = 27;
     
     public void FollowPlayer(int playerId)
     {

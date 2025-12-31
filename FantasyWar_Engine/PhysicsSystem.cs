@@ -70,25 +70,38 @@ public class PhysicsSystem
         if (nextPos.X < 0 || nextPos.X >= world.Width || nextPos.Y < 0 || nextPos.Y >= world.Height ||
             world.CollisionGrid[nextPos.X, nextPos.Y] != -1)
         {
-            projectile.ShouldDestroy = true;
-            return;
-        }
-
-        
-        Entity? hitEntity = world.GetEntityAtPosition(nextPos);
-        
-        if (hitEntity != null && hitEntity.IsSolid)
-        {
-            
-            if (hitEntity.Id != projectile.OwnerId && hitEntity.Id != projectile.Id)
+            // Check if we hit a solid entity
+            int hitEntityId = -1;
+            if (nextPos.X >= 0 && nextPos.X < world.Width && nextPos.Y >= 0 && nextPos.Y < world.Height)
             {
-                projectile.OnCollide(hitEntity);
-                hitEntity.OnCollide(projectile);
-                projectile.ShouldDestroy = true;
+                hitEntityId = world.CollisionGrid[nextPos.X, nextPos.Y];
+            }
+
+            Entity? hitEntity = null;
+            if (hitEntityId != -1)
+            {
+                world.Entities.TryGetValue(hitEntityId, out hitEntity);
+            }
+            
+            if (hitEntity != null && hitEntity.IsSolid)
+            {
+                if (hitEntity.Id != projectile.OwnerId && hitEntity.Id != projectile.Id)
+                {
+                    projectile.OnCollide(hitEntity);
+                    hitEntity.OnCollide(projectile);
+                    projectile.ShouldDestroy = true;
+                }
+                else
+                {
+                    // Hit owner or self -> Force move through
+                    world.SetGridValue(nextPos, projectile.Position, projectile.Id, projectile.IsSolid);
+                    projectile.Position = nextPos;
+                }
             }
             else
             {
-                projectile.SetActorLocation(nextPos);
+                // Hit map boundary or something else that is solid but not in Entities (shouldn't happen with current logic)
+                projectile.ShouldDestroy = true;
             }
         }
         else

@@ -11,7 +11,8 @@ public enum PacketType : byte
     WorldState = 4,
     Action = 5,
     SpawnOrDestroyPlayer = 6,
-    SpawnOrDestroyProjectile = 7
+    SpawnOrDestroyProjectile = 7,
+    PlayerStatus = 8
 }
 
 public abstract class NetworkPacket
@@ -33,8 +34,27 @@ public abstract class NetworkPacket
             PacketType.Action => JsonSerializer.Deserialize<ActionPacket>(json),
             PacketType.SpawnOrDestroyPlayer => JsonSerializer.Deserialize<SpawnOrDestroyPlayerPacket>(json),
             PacketType.SpawnOrDestroyProjectile => JsonSerializer.Deserialize<SpawnOrDestroyProjectilePacket>(json),
+            PacketType.PlayerStatus => JsonSerializer.Deserialize<PlayerStatusPacket>(json),
             _ => null
         };
+    }
+}
+
+public class PlayerStatusPacket : NetworkPacket
+{
+    public int Health { get; set; }
+    public int Resistance { get; set; }
+    public bool CanMove { get; set; }
+    public bool IsBurning { get; set; }
+
+    public PlayerStatusPacket(int playerId, int health, int resistance, bool canMove, bool isBurning)
+    {
+        PacketType = PacketType.PlayerStatus;
+        PlayerId = playerId;
+        Health = health;
+        Resistance = resistance;
+        CanMove = canMove;
+        IsBurning = isBurning;
     }
 }
 

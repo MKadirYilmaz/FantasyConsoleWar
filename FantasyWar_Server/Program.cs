@@ -5,6 +5,8 @@ using FantasyWar_Engine;
 
 class Program
 {
+    private const int TARGET_FRAME_RATE = 60;
+    
     static void Main(string[] args)
     {
         World serverWorld = new World(50, 50, true);
@@ -43,31 +45,30 @@ class Program
                     SpawnOrDestroyProjectilePacket destroyPacket = new SpawnOrDestroyProjectilePacket(projectile, false);
                     server.TcpServer?.BroadcastPacket(destroyPacket);
                 }
+                else if (entity is Player player)
+                {
+                    SpawnOrDestroyPlayerPacket destroyPacket = new SpawnOrDestroyPlayerPacket(player, false);
+                    server.TcpServer?.BroadcastPacket(destroyPacket);
+                }
             }
             
             foreach (Entity entity in serverWorld.Entities.Values)
             {
-                if (entity is Player or Projectile)
+                if (entity is Player player)
+                {
+                    MovementPacket moveUpdate = new MovementPacket(entity.GetActorLocation(), entity.Id);
+                    server.UdpServer?.BroadcastPacket(moveUpdate);
+                    
+                    PlayerStatusPacket statusPacket = new PlayerStatusPacket(player.Id, player.Health, player.Resistance, player.CanMove, player.IsBurning);
+                    server.UdpServer?.BroadcastPacket(statusPacket);
+                }
+                else if (entity is Projectile)
                 {
                     MovementPacket moveUpdate = new MovementPacket(entity.GetActorLocation(), entity.Id);
                     server.UdpServer?.BroadcastPacket(moveUpdate);
                 }
             }
-            var playersDict = new ConcurrentDictionary<int, Player>(
-                serverWorld.Entities.Values.OfType<Player>().ToDictionary(p => p.Id, p => p)
-            );
-            var projDict = new ConcurrentDictionary<int, Projectile>(
-                serverWorld.Entities.Values.OfType<Projectile>().ToDictionary(p => p.Id, p => p)
-            );
-                
-            var entitiesDict = new ConcurrentDictionary<int, Entity>(
-                serverWorld.Entities.Values.Where(e => !(e is Player) && !(e is Projectile)).ToDictionary(e => e.Id, e => e)
-            );
-        
-            WorldPacket worldPacket = new WorldPacket(entitiesDict, playersDict, projDict);
-            //server.UdpServer?.BroadcastPacket(worldPacket);
-            
-            Thread.Sleep(20); // 50 FPS
+            Thread.Sleep(1000 / TARGET_FRAME_RATE);
         }
     }
 }
