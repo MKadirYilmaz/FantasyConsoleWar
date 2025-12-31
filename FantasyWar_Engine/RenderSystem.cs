@@ -7,6 +7,7 @@ public class RenderSystem
     private int _viewWidth;
     private int _viewHeight;
     private const int UI_HEIGHT = 3;
+    private const int CHAT_HEIGHT = 5; // 1 separator + 3 messages + 1 input line
 
     public RenderSystem(int viewWidth, int viewHeight)
     {
@@ -16,76 +17,95 @@ public class RenderSystem
         Console.CursorVisible = false;
     }
 
-    public void Render(World world, PlayerCamera camera)
+    public void Render(World world, PlayerCamera camera, bool isChatting, string currentInput)
     {
-        int totalHeight = _viewHeight + UI_HEIGHT;
-        
-        // Create buffer
-        string[,] buffer = new string[totalHeight, _viewWidth];
-        ConsoleColor[,] colorBuffer = new ConsoleColor[totalHeight, _viewWidth];
+        // 1. UI Buffer (Double Width for high res text)
+        int uiWidth = _viewWidth * 2;
+        string[,] uiBuffer = new string[UI_HEIGHT, uiWidth];
+        InitializeBuffer(uiBuffer, " ");
 
         Player? localPlayer = world.GetPlayer(world.LocalPlayerId);
-        DrawUI(localPlayer, buffer, colorBuffer);
-        
+        DrawUI(localPlayer, uiBuffer);
+
+        // 2. Game Buffer (Single Width, but content is double-width strings)
+        string[,] gameBuffer = new string[_viewHeight, _viewWidth];
+        InitializeBuffer(gameBuffer, "  ");
+
         var (offsetX, offsetY) = camera.GetViewOffset(world);
         
-        // Draw static world (walls, ground)
         for (int y = 0; y < _viewHeight; y++)
         {
             for (int x = 0; x < _viewWidth; x++)
             {
-                int bufferY = y + UI_HEIGHT;
-                
                 int worldX = offsetX + x;
                 int worldY = offsetY + y;
 
-                // Out of bounds check
                 if (worldX < 0 || worldX >= world.Width || worldY < 0 || worldY >= world.Height)
                 {
-                    buffer[bufferY, x] = "  ";
+                    gameBuffer[y, x] = "  ";
                     continue;
                 }
                 
                 int entityId = world.RenderGrid[worldX, worldY];
                 
-                if (entityId != -1 && world.Entities.TryGetValue(entityId, out Entity? wall))
+                if (entityId != -1 && world.Entities.TryGetValue(entityId, out Entity? entity))
                 {
-                    buffer[bufferY, x] = wall.Visual;
-                    colorBuffer[bufferY, x] = wall.Color;
+                    gameBuffer[y, x] = entity.Visual;
                 }
                 else
                 {
-                    buffer[bufferY, x] = "  "; // Empty ground
-                    colorBuffer[bufferY, x] = ConsoleColor.DarkGreen;
+                    gameBuffer[y, x] = "  "; 
                 }
             }
         }
-        
 
-        // Render buffer to console
+        // 3. Chat Buffer (Double Width for high res text)
+        int chatWidth = _viewWidth * 2;
+        string[,] chatBuffer = new string[CHAT_HEIGHT, chatWidth];
+        InitializeBuffer(chatBuffer, " ");
+        
+        DrawChat(world, chatBuffer, isChatting, currentInput);
+
+        // 4. Combine and Render
         Console.SetCursorPosition(0, 0);
         StringBuilder sb = new StringBuilder();
         
-        for (int y = 0; y < totalHeight; y++)
+        AppendBuffer(sb, uiBuffer);
+        AppendBuffer(sb, gameBuffer);
+        AppendBuffer(sb, chatBuffer);
+        
+        Console.Write(sb.ToString());
+    }
+
+    private void InitializeBuffer(string[,] buffer, string defaultValue)
+    {
+        int rows = buffer.GetLength(0);
+        int cols = buffer.GetLength(1);
+        for (int y = 0; y < rows; y++)
+            for (int x = 0; x < cols; x++)
+                buffer[y, x] = defaultValue;
+    }
+
+    private void AppendBuffer(StringBuilder sb, string[,] buffer)
+    {
+        int rows = buffer.GetLength(0);
+        int cols = buffer.GetLength(1);
+        for (int y = 0; y < rows; y++)
         {
-            for (int x = 0; x < _viewWidth; x++)
+            for (int x = 0; x < cols; x++)
             {
                 sb.Append(buffer[y, x]);
             }
             sb.AppendLine();
         }
-        Console.Write(sb.ToString());
     }
     
-    private void DrawUI(Player? player, string[,] buffer, ConsoleColor[,] colorBuffer)
+    private void DrawUI(Player? player, string[,] buffer)
     {
-        // Clear UI area
-        for (int y = 0; y < UI_HEIGHT; y++)
-        for (int x = 0; x < _viewWidth; x++)
-            buffer[y, x] = " "; 
-
-        // Çerçeve veya ayırıcı çizgi (Opsiyonel)
-        for (int x = 0; x < _viewWidth; x++) buffer[UI_HEIGHT - 1, x] = "═";
+        int width = buffer.GetLength(1);
+        
+        // Separator line at bottom of UI
+        for (int x = 0; x < width; x++) buffer[UI_HEIGHT - 1, x] = "═";
 
         if (player == null)
         {
@@ -93,7 +113,7 @@ public class RenderSystem
             return;
         }
         
-        string healthBar = player.GetHealthBar(10); // [████░░] 80/100
+        string healthBar = player.GetHealthBar(20); 
         string info = $"{player.Name} (ID:{player.Id}) {healthBar} {player.Health}";
         WriteToBuffer(buffer, 0, 1, info);
 
@@ -106,13 +126,41 @@ public class RenderSystem
 
         WriteToBuffer(buffer, 1, 1, status);
     }
+
+    private void DrawChat(World world, string[,] buffer, bool isChatting, string currentInput)
+    {
+        int width = buffer.GetLength(1);
+        
+        // Separator
+        for (int x = 0; x < width; x++) buffer[0, x] = "─";
+        
+        // Chat messages
+        int msgY = 1;
+        foreach (var msg in world.ChatMessages)
+        {
+            if (msgY >= 4) break; // 3 messages max
+            WriteToBuffer(buffer, msgY, 0, msg);
+            msgY++;
+        }
+        
+        // Input line
+        if (isChatting)
+        {
+            WriteToBuffer(buffer, 4, 0, $"> {currentInput}_");
+        }
+        else
+        {
+            WriteToBuffer(buffer, 4, 0, "Press 'T' to chat");
+        }
+    }
     
     private void WriteToBuffer(string[,] buffer, int row, int col, string text)
     {
+        int width = buffer.GetLength(1);
         int currentX = col;
         foreach (char c in text)
         {
-            if (currentX >= _viewWidth) break;
+            if (currentX >= width) break;
             buffer[row, currentX] = c.ToString();
             currentX++;
         }

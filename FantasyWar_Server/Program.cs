@@ -34,6 +34,10 @@ class Program
                 {
                     server.TcpServer?.BroadcastPacket(spawnOrDestroyProjectilePacket);
                 }
+                else if (packet is ChatPacket chatPacket)
+                {
+                    server.TcpServer?.BroadcastPacket(chatPacket);
+                }
             }
 
             var destroyedEntities = physicsSystem.Update(serverWorld, 0.02f); // Assuming 50 FPS, so deltaTime is 0.02 seconds

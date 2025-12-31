@@ -7,6 +7,9 @@ class Program
     private static Vector _lastDirecition = new Vector(0, 1);
     private static ProjectileType _projectileType = ProjectileType.Physical;
     
+    private static bool _isChatting = false;
+    private static string _currentChatMessage = "";
+    
     private const int TARGET_FRAME_RATE = 60;
     
     static void Main(string[] args)
@@ -36,11 +39,60 @@ class Program
         {
             if (Console.KeyAvailable)
             {
-                ConsoleKey key = Console.ReadKey(true).Key;
+                ConsoleKeyInfo keyInfo = Console.ReadKey(true);
+                ConsoleKey key = keyInfo.Key;
                 
-                if(key == ConsoleKey.Escape) isRunning = false;
-                
-                HandleInput(key, gameWorld);
+                if(key == ConsoleKey.Escape)
+                {
+                    if (_isChatting)
+                    {
+                        _isChatting = false;
+                        _currentChatMessage = "";
+                    }
+                    else
+                    {
+                        isRunning = false;
+                    }
+                }
+                else if (_isChatting)
+                {
+                    if (key == ConsoleKey.Enter)
+                    {
+                        if (!string.IsNullOrWhiteSpace(_currentChatMessage))
+                        {
+                            ChatPacket chatPacket = new ChatPacket(_currentChatMessage, gameWorld.LocalPlayerId);
+                            _client?.TcpClient.SendPacket(chatPacket);
+                            _currentChatMessage = "";
+                        }
+                        _isChatting = false;
+                    }
+                    else if (key == ConsoleKey.Backspace)
+                    {
+                        if (_currentChatMessage.Length > 0)
+                        {
+                            _currentChatMessage = _currentChatMessage.Substring(0, _currentChatMessage.Length - 1);
+                        }
+                    }
+                    else
+                    {
+                        if (keyInfo.KeyChar >= ' ') // Ignore control chars
+                        {
+                            _currentChatMessage += keyInfo.KeyChar;
+                        }
+                    }
+                }
+                else
+                {
+                    if (key == ConsoleKey.T)
+                    {
+                        _isChatting = true;
+                        _currentChatMessage = "";
+                    }
+                    else
+                    {
+                        HandleInput(key, gameWorld);
+                    }
+                }
             }
             
             packageHandler.ProcessPackets(gameWorld);
@@ -108,6 +160,6 @@ class Program
     static void Render(World world, RenderSystem renderSystem)
     {
         if (world.LocalCamera == null) return;
-        renderSystem.Render(world, world.LocalCamera);
+        renderSystem.Render(world, world.LocalCamera, _isChatting, _currentChatMessage);
     }
 }

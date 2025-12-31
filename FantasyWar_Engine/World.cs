@@ -12,7 +12,7 @@ public class World
     public static World? Instance { get; private set; }
     
     public ConcurrentDictionary<int, Entity> Entities { get; set; } = new();
-
+    public List<string> ChatMessages { get; set; } = new();
     public bool HasAuthority { get; private set; } = false;
     
     public int LocalPlayerId { get; set; } = -1;
@@ -148,13 +148,12 @@ public class World
     
     public Vector GetRandomEmptyLocation()
     {
-        Random rnd = new Random(55);
         int x, y;
         do
         {
-            x = rnd.Next(1, Width - 1);
-            y = rnd.Next(1, Height - 1);
-        } while (CollisionGrid[x, y] == -1);
+            x = Random.Shared.Next(1, Width - 1);
+            y = Random.Shared.Next(1, Height - 1);
+        } while (CollisionGrid[x, y] != -1);
         
         return new Vector(x, y);
     }

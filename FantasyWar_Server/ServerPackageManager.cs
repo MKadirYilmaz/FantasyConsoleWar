@@ -39,7 +39,8 @@ public class ServerPackageManager
                 break;
             case PacketType.Chat:
                 ChatPacket chatPacket = (ChatPacket)packet;
-                //DisplayChatMessage(chatPacket);
+                PacketSendQueue.Enqueue(chatPacket);
+                Console.WriteLine($"[Chat] Player {chatPacket.PlayerId}: {chatPacket.Message}");
                 break;
             case PacketType.Action:
                 ActionPacket actionPacket = (ActionPacket)packet;

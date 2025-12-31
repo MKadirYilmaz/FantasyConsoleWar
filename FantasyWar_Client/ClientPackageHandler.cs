@@ -137,7 +137,12 @@ public class ClientPackageHandler
         var player = world.GetPlayer(packet.PlayerId);
         string name = player != null ? player.Name : "Unknown";
 
-        Console.WriteLine($"[Chat] {name}: {packet.Message}");
+        string message = $"[Chat] {name}: {packet.Message}";
+        world.ChatMessages.Add(message);
+        if (world.ChatMessages.Count > 3)
+        {
+            world.ChatMessages.RemoveAt(0);
+        }
     }
     
     private void HandleSpawnOrDestroyPlayer(SpawnOrDestroyPlayerPacket packet, World world)
