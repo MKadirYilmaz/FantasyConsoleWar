@@ -43,6 +43,11 @@ public class PhysicsSystem
 
         return true;
     }
+
+    public static bool CheckOverlap(Vector point, int minX, int maxX, int minY, int maxY)
+    {
+        return point.X >= minX && point.X <= maxX && point.Y >= minY && point.Y <= maxY;
+    }
     
     private void MoveProjectile(Projectile projectile, World world, float deltaTime)
     {

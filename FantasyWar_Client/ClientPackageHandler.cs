@@ -13,6 +13,11 @@ public class ClientPackageHandler
     public List<LobbyPlayerData> Rankings { get; private set; } = new();
     public bool BackToLobby { get; private set; } = false;
 
+    public int SafeMinX { get; private set; } = 0;
+    public int SafeMaxX { get; private set; } = 100;
+    public int SafeMinY { get; private set; } = 0;
+    public int SafeMaxY { get; private set; } = 100;
+
     public void Reset()
     {
         GameStarted = false;
@@ -85,7 +90,13 @@ public class ClientPackageHandler
                 IsGameOver = true;
                 Rankings = gameOverPacket.Rankings;
                 break;
-                
+            case PacketType.RingState:
+                RingStatePacket ringPacket = (RingStatePacket)packet;
+                SafeMinX = ringPacket.SafeMinX;
+                SafeMaxX = ringPacket.SafeMaxX;
+                SafeMinY = ringPacket.SafeMinY;
+                SafeMaxY = ringPacket.SafeMaxY;
+                break;
         }
     }
     

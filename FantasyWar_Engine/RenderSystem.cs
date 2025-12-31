@@ -17,7 +17,8 @@ public class RenderSystem
         Console.CursorVisible = false;
     }
 
-    public void Render(World world, PlayerCamera camera, bool isChatting, string currentInput)
+    public void Render(World world, PlayerCamera camera, bool isChatting, string currentInput,
+                       int safeMinX, int safeMaxX, int safeMinY, int safeMaxY)
     {
         // 1. UI Buffer (Double Width for high res text)
         int uiWidth = _viewWidth * 2;
@@ -46,6 +47,10 @@ public class RenderSystem
                     continue;
                 }
                 
+                // Check Ring/Storm
+                bool isInStorm = worldX < safeMinX || worldX > safeMaxX || 
+                                 worldY < safeMinY || worldY > safeMaxY;
+
                 int entityId = world.RenderGrid[worldX, worldY];
                 
                 if (entityId != -1 && world.Entities.TryGetValue(entityId, out Entity? entity))
@@ -54,7 +59,14 @@ public class RenderSystem
                 }
                 else
                 {
-                    gameBuffer[y, x] = "  "; 
+                    if (isInStorm)
+                    {
+                        gameBuffer[y, x] = "▒▒"; // Visual for storm
+                    }
+                    else
+                    {
+                        gameBuffer[y, x] = "  "; 
+                    }
                 }
             }
         }

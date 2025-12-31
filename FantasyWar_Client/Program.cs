@@ -21,8 +21,12 @@ class Program
         World gameWorld = new World(50, 50);
         ClientPackageHandler packageHandler = new ClientPackageHandler();
         
-        Console.WriteLine("Connecting to server...");
-        _client = new Client("127.0.0.1", 5000, 5001, packageHandler);
+        Console.Write("Enter Server IP (default 127.0.0.1): ");
+        string? ipInput = Console.ReadLine();
+        string serverIp = string.IsNullOrWhiteSpace(ipInput) ? "127.0.0.1" : ipInput;
+
+        Console.WriteLine($"Connecting to server at {serverIp}...");
+        _client = new Client(serverIp, 5000, 5001, packageHandler);
         
         while (gameWorld.LocalPlayerId == -1)
         {
@@ -57,7 +61,7 @@ class Program
                 {
                     RenderWinScreen(packageHandler.Rankings);
                     packageHandler.ProcessPackets(gameWorld); // Keep processing to receive LobbyState/BackToLobby
-                    Thread.Sleep(100);
+                    Thread.Sleep(1000);
                     continue;
                 }
 
@@ -123,7 +127,7 @@ class Program
                 
                 if (!packageHandler.IsGameOver)
                 {
-                    Render(gameWorld, renderSystem);
+                    Render(gameWorld, renderSystem, packageHandler);
                 }
                 
                 Thread.Sleep(1000 / TARGET_FRAME_RATE);
@@ -134,17 +138,17 @@ class Program
 
     static void RenderWinScreen(List<LobbyPlayerData> rankings)
     {
+        Console.Clear();
+        string winScreenBuffer = "";
         Console.SetCursorPosition(0, 0);
-        Console.WriteLine("=== GAME OVER ===");
-        Console.WriteLine("-----------------");
-        Console.WriteLine("Rankings:");
+        winScreenBuffer += "=== GAME OVER ===\n-----------------\nRankings:\n";
         for (int i = 0; i < rankings.Count; i++)
         {
             string prefix = (i == 0) ? "👑 WINNER" : $"#{i + 1}";
-            Console.WriteLine($"{prefix}: {rankings[i].Visual} {rankings[i].Name}");
+            winScreenBuffer += $"{prefix}: {rankings[i].Visual} {rankings[i].Name}\n";
         }
-        Console.WriteLine("-----------------");
-        Console.WriteLine("Returning to lobby in a few seconds...");
+        winScreenBuffer += "-----------------\nReturning to lobby in a few seconds...\n";
+        Console.Write(winScreenBuffer);
     }
 
     static void HandleInput(ConsoleKey key, World world)
@@ -201,9 +205,10 @@ class Program
         }
     }
 
-    static void Render(World world, RenderSystem renderSystem)
+    static void Render(World world, RenderSystem renderSystem, ClientPackageHandler packageHandler)
     {
         if (world.LocalCamera == null) return;
-        renderSystem.Render(world, world.LocalCamera, _isChatting, _currentChatMessage);
+        renderSystem.Render(world, world.LocalCamera, _isChatting, _currentChatMessage,
+            packageHandler.SafeMinX, packageHandler.SafeMaxX, packageHandler.SafeMinY, packageHandler.SafeMaxY);
     }
 }

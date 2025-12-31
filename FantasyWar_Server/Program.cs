@@ -1,4 +1,6 @@
-﻿using FantasyWar_Server;
+﻿using System.Net;
+using System.Net.Sockets;
+using FantasyWar_Server;
 using FantasyWar_Engine;
 
 
@@ -11,18 +13,20 @@ enum GameState
 
 class Program
 {
-    private const int TargetFrameRate = 60;
+    private const int TARGET_FRAME_RATE = 60;
     private static GameState _currentState = GameState.Lobby;
     private static List<LobbyPlayerData> _initialPlayers = new List<LobbyPlayerData>();
     private static List<LobbyPlayerData> _deadPlayers = new List<LobbyPlayerData>();
     private static DateTime _gameOverTime;
     private static DateTime? _winConditionMetTime;
+    private static DateTime _lastRingBroadcastTime = DateTime.MinValue;
     
     static void Main()
     {
         World serverWorld = new World(50, 50, true);
         
         PhysicsSystem physicsSystem = new PhysicsSystem();
+        RingSystem ringSystem = new RingSystem();
         
         ServerPackageManager serverPackageManager = new ServerPackageManager();
         Server server = new Server();
@@ -30,6 +34,14 @@ class Program
         
         Console.WriteLine("Server started on port 5000 and UDP target port 5001.");
 
+        var host = Dns.GetHostEntry(Dns.GetHostName());
+        foreach (var ip in host.AddressList)
+        {
+            if (ip.AddressFamily == AddressFamily.InterNetwork)
+            {
+                Console.WriteLine($"Server IP Address: {ip}");
+            }
+        }
         
         while (true)
         {
@@ -55,6 +67,8 @@ class Program
                     Console.WriteLine("All players ready. Starting game...");
                     _currentState = GameState.Playing;
                     if (server.TcpServer != null) server.TcpServer.IsGameRunning = true;
+                    
+                    ringSystem.Start(serverWorld);
                     
                     _initialPlayers = new List<LobbyPlayerData>(lobbyPlayers);
                     _deadPlayers.Clear();
@@ -85,6 +99,17 @@ class Program
             }
             else if (_currentState == GameState.Playing)
             {
+                // Broadcast Ring State periodically (every 1 second)
+                if ((DateTime.Now - _lastRingBroadcastTime).TotalSeconds >= 1)
+                {
+                    _lastRingBroadcastTime = DateTime.Now;
+                    RingStatePacket ringPacket = new RingStatePacket(
+                        ringSystem.SafeMinX, ringSystem.SafeMaxX, 
+                        ringSystem.SafeMinY, ringSystem.SafeMaxY
+                    );
+                    server.UdpServer?.BroadcastPacket(ringPacket);
+                }
+
                 while (serverPackageManager.PacketSendQueue.TryDequeue(out var packet))
                 {
                     if (packet is SpawnOrDestroyPlayerPacket spawnOrDestroyPlayerPacket)
@@ -159,6 +184,7 @@ class Program
                     {
                         // Enough time has passed, end the game
                         _currentState = GameState.GameOver;
+                        ringSystem.Stop();
                         if (server.TcpServer != null) server.TcpServer.IsGameRunning = false;
                         _gameOverTime = DateTime.Now;
                         
@@ -211,7 +237,7 @@ class Program
                         server.UdpServer?.BroadcastPacket(moveUpdate);
                     }
                 }
-                Thread.Sleep(1000 / TargetFrameRate);
+                Thread.Sleep(1000 / TARGET_FRAME_RATE);
             }
             else if (_currentState == GameState.GameOver)
             {
@@ -265,6 +291,12 @@ class Program
         }
     }
 }
+
+
+
+
+
+
 
 
 

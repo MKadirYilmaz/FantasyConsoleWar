@@ -17,7 +17,30 @@ public enum PacketType : byte
     PlayerReady = 10,
     UpdatePlayerInfo = 11,
     GameStart = 12,
-    GameOver = 13
+    GameOver = 13,
+    RingState = 14
+}
+
+public class RingStatePacket : NetworkPacket
+{
+    public int SafeMinX { get; set; }
+    public int SafeMaxX { get; set; }
+    public int SafeMinY { get; set; }
+    public int SafeMaxY { get; set; }
+
+    public RingStatePacket()
+    {
+        PacketType = PacketType.RingState;
+    }
+
+    public RingStatePacket(int safeMinX, int safeMaxX, int safeMinY, int safeMaxY)
+    {
+        PacketType = PacketType.RingState;
+        SafeMinX = safeMinX;
+        SafeMaxX = safeMaxX;
+        SafeMinY = safeMinY;
+        SafeMaxY = safeMaxY;
+    }
 }
 
 public abstract class NetworkPacket
@@ -45,6 +68,7 @@ public abstract class NetworkPacket
             PacketType.UpdatePlayerInfo => JsonSerializer.Deserialize<UpdatePlayerInfoPacket>(json),
             PacketType.GameStart => JsonSerializer.Deserialize<GameStartPacket>(json),
             PacketType.GameOver => JsonSerializer.Deserialize<GameOverPacket>(json),
+            PacketType.RingState => JsonSerializer.Deserialize<RingStatePacket>(json),
             _ => null
         };
     }
