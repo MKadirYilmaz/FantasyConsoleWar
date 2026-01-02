@@ -79,9 +79,10 @@ public class ServerPackageManager
     private void HandleMovement(MovementPacket packet, World world)
     {
         Player? player = world.GetPlayer(packet.PlayerId);
-        if (player != null && player.CanMove)
+        if (player != null && player.CanMove && player.AllowedToMove())
         {
-            player.SetActorLocation(packet.MovementVector);
+            if (player.SetActorLocation(packet.MovementVector))
+                player.OnMove();
         }
     }
     private void HandleAction(ActionPacket packet, World world)

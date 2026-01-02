@@ -11,6 +11,7 @@ public class Player : Entity
     public bool IsBurning { get; set; } = false;
     
     private DateTime _burnEndTime;
+    private DateTime _moveTime = DateTime.MinValue;
     
     
     public bool IsLocalPlayer { get; set; } = false;
@@ -51,6 +52,18 @@ public class Player : Entity
     public void SetVisual(string visual)
     {
         Visual = visual;
+    }
+
+    public bool AllowedToMove()
+    {
+        if ((DateTime.Now - _moveTime).TotalMilliseconds < 500)
+            return false;
+        return true;
+    }
+
+    public void OnMove()
+    {
+        _moveTime = DateTime.Now;
     }
     
     public void TakeDamage(int damage)
