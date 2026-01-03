@@ -124,12 +124,29 @@ public class World
         }
         
         // Add some random walls
-        Random rnd = new Random(42);
-        for (int i = 0; i < (int)((Height * Width) / 70) ; i++)
+        Random rnd = new Random();
+        for (int i = 0; i < (int)((Height * Width) / 30) ; i++)
         {
-            int rx = rnd.Next(1, Width - 1);
-            int ry = rnd.Next(1, Height - 1);
+            int rx = 0, ry = 0;
+            do
+            {
+                rx = rnd.Next(1, Width - 1);
+                ry = rnd.Next(1, Height - 1);
+            } while(CollisionGrid[rx, ry] != -1);
+            
             Entity wall = EntityManager.CreateEntity(this, "Wall", "🪨", new Vector(rx, ry));
+        }
+        // Add some random trees
+        for (int i = 0; i < (int)((Height * Width) / 40) ; i++)
+        {
+            int rx = 0, ry = 0;
+            do
+            {
+                rx = rnd.Next(1, Width - 1);
+                ry = rnd.Next(1, Height - 1);
+            } while(CollisionGrid[rx, ry] != -1);
+            
+            Entity tree = EntityManager.CreateEntity(this, "Tree", "🌳", new Vector(rx, ry));
         }
     }
     

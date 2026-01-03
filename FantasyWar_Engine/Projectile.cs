@@ -48,17 +48,17 @@ public class Projectile : Entity
             case ProjectileType.Physical:
                 Visual = "💥";
                 Speed = 5;
-                Damage = 50;
+                Damage = 40;
                 break;
             case ProjectileType.Electric:
                 Visual = "⚡";
                 Speed = 3;
-                Damage = 25;
+                Damage = 20;
                 break;
             case ProjectileType.Fire:
                 Visual = "🔥";
                 Speed = 4;
-                Damage = 30;
+                Damage = 25;
                 break;
             case ProjectileType.Ice:
                 Visual = "❄️";
