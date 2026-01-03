@@ -90,6 +90,11 @@ public class ServerPackageManager
         Player? player = world.GetPlayer(packet.PlayerId);
         if (player != null)
         {
+            if (!player.AbilitySystem.CanUseAbility(packet.ProjectileType))
+                return;
+
+            player.AbilitySystem.UseAbility(packet.ProjectileType);
+
             // Process action based on ActionType
             Console.WriteLine($"Player {player.Name} performed action {packet.ProjectileType}");
 

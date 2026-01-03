@@ -6,7 +6,7 @@ public class RenderSystem
 {
     private int _viewWidth;
     private int _viewHeight;
-    private const int UI_HEIGHT = 3;
+    private const int UI_HEIGHT = 4;
     private const int CHAT_HEIGHT = 5; // 1 separator + 3 messages + 1 input line
 
     public RenderSystem(int viewWidth, int viewHeight)
@@ -18,7 +18,7 @@ public class RenderSystem
     }
 
     public void Render(World world, PlayerCamera camera, bool isChatting, string currentInput,
-                       int safeMinX, int safeMaxX, int safeMinY, int safeMaxY)
+                       int safeMinX, int safeMaxX, int safeMinY, int safeMaxY, ProjectileType selectedProjectileType)
     {
         // 1. UI Buffer (Double Width for high res text)
         int uiWidth = _viewWidth * 2;
@@ -26,7 +26,7 @@ public class RenderSystem
         InitializeBuffer(uiBuffer, " ");
 
         Player? localPlayer = world.GetPlayer(world.LocalPlayerId);
-        DrawUI(localPlayer, uiBuffer);
+        DrawUI(localPlayer, uiBuffer, selectedProjectileType);
 
         // 2. Game Buffer (Single Width, but content is double-width strings)
         string[,] gameBuffer = new string[_viewHeight, _viewWidth];
@@ -112,7 +112,7 @@ public class RenderSystem
         }
     }
     
-    private void DrawUI(Player? player, string[,] buffer)
+    private void DrawUI(Player? player, string[,] buffer, ProjectileType selectedProjectileType)
     {
         int width = buffer.GetLength(1);
         
@@ -137,6 +137,19 @@ public class RenderSystem
         if (player.IsBurning) status += "🔥(Burning) ";
 
         WriteToBuffer(buffer, 1, 1, status);
+
+        // Ability Cooldowns
+        string abilities = "Abilities: ";
+        foreach (ProjectileType type in Enum.GetValues(typeof(ProjectileType)))
+        {
+            string name = type.ToString();
+            string selector = (type == selectedProjectileType) ? ">" : " ";
+            double remaining = player.AbilitySystem.GetRemainingCooldown(type) / 1000.0;
+            string cooldown = remaining > 0 ? $"({remaining:F1}s)" : "(READY)";
+            
+            abilities += $"{selector}{name}{cooldown} ";
+        }
+        WriteToBuffer(buffer, 2, 1, abilities);
     }
 
     private void DrawChat(World world, string[,] buffer, bool isChatting, string currentInput)

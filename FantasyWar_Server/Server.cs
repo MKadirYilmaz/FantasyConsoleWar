@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using FantasyWar_Engine;
 
 namespace FantasyWar_Server;
@@ -8,13 +9,13 @@ namespace FantasyWar_Server;
 public class Server
 {
     public TcpGameServer? TcpServer;
-    public UdpServer? UdpServer;
+    public UdpBroadcaster? UdpServer;
     
     public void Start(int tcpPort, int udpTargetPort, ServerPackageManager packageHandler, World world)
     {
+        UdpServer = new UdpBroadcaster(udpTargetPort);
         TcpServer = new TcpGameServer();
-        TcpServer.Start(tcpPort, packageHandler, world);
-        UdpServer = new UdpServer(udpTargetPort);
+        TcpServer.Start(tcpPort, packageHandler, world, UdpServer);
     }
 }
 
@@ -23,14 +24,16 @@ public class TcpGameServer
     private TcpListener? _listener;
     private ServerPackageManager? _serverPackageManager;
     private ConcurrentDictionary<int, TcpConnection> _connections = new();
+    private UdpBroadcaster? _udpBroadcaster;
 
     private World? _world;
     public bool IsGameRunning { get; set; } = false;
 
-    public void Start(int port, ServerPackageManager packageHandler, World world)
+    public void Start(int port, ServerPackageManager packageHandler, World world, UdpBroadcaster? udpBroadcaster = null)
     {
         _serverPackageManager = packageHandler;
         _world = world;
+        _udpBroadcaster = udpBroadcaster;
         
         _listener = new TcpListener(IPAddress.Any, port);
         _listener.Start();
@@ -111,6 +114,20 @@ public class TcpGameServer
         
         _connections.TryAdd(spawnedPlayer.Id, clientConn);
         
+        // Handle UDP Port Registration
+        clientConn.OnPacketReceived += (packet) =>
+        {
+            if (packet is ClientUdpPortPacket udpPacket)
+            {
+                if (clientConn.RemoteAddress != null && _udpBroadcaster != null)
+                {
+                    IPEndPoint endPoint = new IPEndPoint(clientConn.RemoteAddress, udpPacket.Port);
+                    _udpBroadcaster.AddClient(endPoint);
+                    Console.WriteLine($"Registered UDP endpoint for player {udpPacket.PlayerId}: {endPoint}");
+                }
+            }
+        };
+        
         Console.WriteLine($"New player {spawnedPlayer.Id} has joined the game. (Waiting: {spawnedPlayer.IsWaiting})");
         
         LoginPacket loginPacket = new LoginPacket(spawnedPlayer.Name, spawnedPlayer.Id, spawnedPlayer.GetActorLocation());
@@ -148,20 +165,16 @@ public class TcpGameServer
     {
         return _connections.ContainsKey(playerId);
     }
+
+    public List<IPAddress> GetConnectedClientsIPs()
+    {
+        return _connections.Values
+            .Select(c => c.RemoteAddress)
+            .Where(ip => ip != null)
+            .Cast<IPAddress>()
+            .Distinct()
+            .ToList();
+    }
 }
 
-public class UdpServer
-{
-    public UdpBroadcaster Broadcaster { get; set; }
-    
-    public UdpServer(int port)
-    {
-        Broadcaster = new UdpBroadcaster(port);
-    }
-    
-    public void BroadcastPacket(NetworkPacket packet)
-    {
-        Task.Run(() => Broadcaster.BroadcastStateAsync(packet));
-    }
-}
 

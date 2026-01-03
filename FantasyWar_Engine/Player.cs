@@ -10,6 +10,8 @@ public class Player : Entity
     public bool CanMove { get; set; } = true;
     public bool IsBurning { get; set; } = false;
     
+    public AbilitySystem AbilitySystem { get; private set; } = new AbilitySystem();
+
     private DateTime _burnEndTime;
     private DateTime _moveTime = DateTime.MinValue;
     
@@ -56,7 +58,7 @@ public class Player : Entity
 
     public bool AllowedToMove()
     {
-        if ((DateTime.Now - _moveTime).TotalMilliseconds < 500)
+        if ((DateTime.Now - _moveTime).TotalMilliseconds < 250)
             return false;
         return true;
     }

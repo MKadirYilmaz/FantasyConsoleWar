@@ -12,6 +12,8 @@ public class TcpConnection
     
     public event Action<NetworkPacket>? OnPacketReceived;
     public event Action<TcpConnection>? OnDisconnect;
+
+    public IPAddress? RemoteAddress => ((IPEndPoint?)_client.Client.RemoteEndPoint)?.Address;
     
     public TcpConnection(TcpClient client)
     {
@@ -86,7 +88,8 @@ public class UdpBroadcaster
     private readonly UdpClient _udpClient;
     private readonly IPEndPoint _broadcastEndPoint;
     private bool _disposed;
-    
+    private readonly List<IPEndPoint> _clients = new();
+
 
     public UdpBroadcaster(int port)
     {
@@ -97,6 +100,26 @@ public class UdpBroadcaster
         Console.WriteLine($"UDP Broadcaster initialized on port {port}");
     }
 
+    public void AddClient(IPEndPoint endPoint)
+    {
+        lock (_clients)
+        {
+            if (!_clients.Contains(endPoint))
+            {
+                _clients.Add(endPoint);
+                Console.WriteLine($"Added UDP client: {endPoint}");
+            }
+        }
+    }
+
+    public void RemoveClient(IPEndPoint endPoint)
+    {
+        lock (_clients)
+        {
+            _clients.Remove(endPoint);
+        }
+    }
+
     public async Task BroadcastStateAsync(NetworkPacket packet)
     {
         if (_disposed) return;
@@ -104,15 +127,40 @@ public class UdpBroadcaster
         {
             string json = NetworkPacket.ToJson(packet);
             byte[] data = Encoding.UTF8.GetBytes(json);
-            
-            await _udpClient.SendAsync(data, data.Length, _broadcastEndPoint);
-            Console.WriteLine($"Broadcasted: {packet.PacketType} ({data.Length} bytes) {json}");
+
+            List<IPEndPoint> clientsSnapshot;
+            lock (_clients)
+            {
+                clientsSnapshot = new List<IPEndPoint>(_clients);
+            }
+
+            if (clientsSnapshot.Count > 0)
+            {
+                foreach (var client in clientsSnapshot)
+                {
+                    try
+                    {
+                        await _udpClient.SendAsync(data, data.Length, client);
+                    }
+                    catch (Exception) { /* Ignore individual send errors */ }
+                }
+            }
+            else
+            {
+                // Fallback to broadcast if no specific clients are registered (e.g. legacy behavior)
+                await _udpClient.SendAsync(data, data.Length, _broadcastEndPoint);
+            }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Broadcast error: {ex.Message}");
             Dispose();
         }
+    }
+
+    public void BroadcastPacket(NetworkPacket packet)
+    {
+        _ = BroadcastStateAsync(packet);
     }
 
     public void Dispose()
@@ -128,12 +176,15 @@ public class UdpListener
     private readonly CancellationTokenSource _cts;
 
     public event Action<NetworkPacket?>? OnPacketReceived;
+    public int Port { get; private set; }
 
     public UdpListener(int port)
     {
         Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
         socket.Bind(new IPEndPoint(IPAddress.Any, port));
+        
+        Port = ((IPEndPoint)socket.LocalEndPoint!).Port;
         
         _udpClient = new UdpClient { Client = socket };
         _udpClient.EnableBroadcast = true;
@@ -177,4 +228,3 @@ public class UdpListener
         _cts.Dispose();
     }
 }
-

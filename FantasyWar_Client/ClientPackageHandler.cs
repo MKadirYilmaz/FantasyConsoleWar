@@ -18,6 +18,8 @@ public class ClientPackageHandler
     public int SafeMinY { get; private set; } = 0;
     public int SafeMaxY { get; private set; } = 100;
 
+    public event Action<int>? OnPlayerLogin;
+
     public void Reset()
     {
         GameStarted = false;
@@ -117,6 +119,7 @@ public class ClientPackageHandler
             newPlayer.IsLocalPlayer = true;
             
             Console.WriteLine("-> This is ME!");
+            OnPlayerLogin?.Invoke(packet.PlayerId);
         }
         
         world.AddOrUpdateEntity(packet.PlayerId, newPlayer);

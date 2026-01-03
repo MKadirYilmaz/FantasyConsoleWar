@@ -26,7 +26,7 @@ class Program
         string serverIp = string.IsNullOrWhiteSpace(ipInput) ? "127.0.0.1" : ipInput;
 
         Console.WriteLine($"Connecting to server at {serverIp}...");
-        _client = new Client(serverIp, 5000, 5001, packageHandler);
+        _client = new Client(serverIp, 5000, 0, packageHandler);
         
         while (gameWorld.LocalPlayerId == -1)
         {
@@ -127,7 +127,7 @@ class Program
                 
                 if (!packageHandler.IsGameOver)
                 {
-                    Render(gameWorld, renderSystem, packageHandler);
+                    Render(gameWorld, renderSystem, packageHandler, _projectileType);
                 }
                 
                 Thread.Sleep(1000 / TARGET_FRAME_RATE);
@@ -188,8 +188,12 @@ class Program
                 _projectileType = ProjectileType.Ice;
                 break;
             case ConsoleKey.Spacebar:
-                ActionPacket actionPacket = new ActionPacket(_projectileType, world.LocalPlayerId, _lastDirecition);
-                _client?.TcpClient.SendPacket(actionPacket);
+                if (localPlayer.AbilitySystem.CanUseAbility(_projectileType))
+                {
+                    localPlayer.AbilitySystem.UseAbility(_projectileType);
+                    ActionPacket actionPacket = new ActionPacket(_projectileType, world.LocalPlayerId, _lastDirecition);
+                    _client?.TcpClient.SendPacket(actionPacket);
+                }
                 break;
         }
         
@@ -205,10 +209,10 @@ class Program
         }
     }
 
-    static void Render(World world, RenderSystem renderSystem, ClientPackageHandler packageHandler)
+    static void Render(World world, RenderSystem renderSystem, ClientPackageHandler packageHandler, ProjectileType selectedProjectileType)
     {
         if (world.LocalCamera == null) return;
         renderSystem.Render(world, world.LocalCamera, _isChatting, _currentChatMessage,
-            packageHandler.SafeMinX, packageHandler.SafeMaxX, packageHandler.SafeMinY, packageHandler.SafeMaxY);
+            packageHandler.SafeMinX, packageHandler.SafeMaxX, packageHandler.SafeMinY, packageHandler.SafeMaxY, selectedProjectileType);
     }
 }

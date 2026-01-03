@@ -15,6 +15,13 @@ public class Client
         
         UdpClient = new UdpGameClient();
         UdpClient.Start(listenUdpPort, packageHandler);
+        
+        packageHandler.OnPlayerLogin += (playerId) =>
+        {
+            ClientUdpPortPacket portPacket = new ClientUdpPortPacket(playerId, UdpClient.Port);
+            TcpClient.SendPacket(portPacket);
+            Console.WriteLine($"Sent UDP Port {UdpClient.Port} to server.");
+        };
     }
 }
 
@@ -45,6 +52,7 @@ public class TcpGameClient
 public class UdpGameClient
 {
     private UdpListener? _listener;
+    public int Port => _listener?.Port ?? 0;
     
     public void Start(int port, ClientPackageHandler packageHandler)
     {

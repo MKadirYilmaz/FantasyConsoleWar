@@ -18,7 +18,20 @@ public enum PacketType : byte
     UpdatePlayerInfo = 11,
     GameStart = 12,
     GameOver = 13,
-    RingState = 14
+    RingState = 14,
+    ClientUdpPort = 15
+}
+
+public class ClientUdpPortPacket : NetworkPacket
+{
+    public int Port { get; set; }
+
+    public ClientUdpPortPacket(int playerId, int port)
+    {
+        PacketType = PacketType.ClientUdpPort;
+        PlayerId = playerId;
+        Port = port;
+    }
 }
 
 public class RingStatePacket : NetworkPacket
@@ -69,6 +82,7 @@ public abstract class NetworkPacket
             PacketType.GameStart => JsonSerializer.Deserialize<GameStartPacket>(json),
             PacketType.GameOver => JsonSerializer.Deserialize<GameOverPacket>(json),
             PacketType.RingState => JsonSerializer.Deserialize<RingStatePacket>(json),
+            PacketType.ClientUdpPort => JsonSerializer.Deserialize<ClientUdpPortPacket>(json),
             _ => null
         };
     }
