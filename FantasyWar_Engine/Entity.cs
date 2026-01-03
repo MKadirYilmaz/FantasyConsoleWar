@@ -30,7 +30,7 @@ public class Entity
     {
         Id = id;
         Name = name;
-        SetActorLocation(position);
+        Position = position;
         Visual = visual;
     }
 
@@ -39,24 +39,21 @@ public class Entity
         return Position;
     }
     
-    public bool SetActorLocation(Vector location)
+    public bool SetActorLocation(Vector location, World world)
     {
-        if (World.Instance == null) return false;
-        
-        if (PhysicsSystem.IsWalkable(location))
+        if (PhysicsSystem.IsWalkable(location, world))
         {
-            
-            World.Instance.SetGridValue(location, Position, Id, IsSolid);
+            world.SetGridValue(location, Position, Id, IsSolid);
             Position = location;
             return true;
         }
         return false;
     }
 
-    public bool AddActorLocation(Vector movementVector)
+    public bool AddActorLocation(Vector movementVector, World world)
     {
         Vector newLocation = Position + movementVector;
-        return SetActorLocation(newLocation);
+        return SetActorLocation(newLocation, world);
     }
     
     

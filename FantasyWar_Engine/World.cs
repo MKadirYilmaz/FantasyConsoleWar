@@ -9,26 +9,13 @@ public class World
     public int[,] CollisionGrid { get; }
     public int[,] RenderGrid { get; }
 
-    public static World? Instance { get; private set; }
-    
     public ConcurrentDictionary<int, Entity> Entities { get; set; } = new();
     public List<string> ChatMessages { get; set; } = new();
     public bool HasAuthority { get; private set; } = false;
     
-    public int LocalPlayerId { get; set; } = -1;
-    public PlayerCamera? LocalCamera;
-    
     public World(int width, int height, bool hasAuthority = false)
     {
         HasAuthority = hasAuthority;
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            throw new InvalidOperationException("World instance already exists!");
-        }
         Width = width;
         Height = height;
         CollisionGrid = new int[width, height];
@@ -127,13 +114,13 @@ public class World
 
         for(int y = 0; y < Height; y++)
         {
-            Entity wallLeft = EntityManager.CreateEntity("Wall", "🪨", new Vector(0, y));
-            Entity wallRight = EntityManager.CreateEntity("Wall", "🪨", new Vector(Width - 1, y));
+            Entity wallLeft = EntityManager.CreateEntity(this, "Wall", "🪨", new Vector(0, y));
+            Entity wallRight = EntityManager.CreateEntity(this, "Wall", "🪨", new Vector(Width - 1, y));
         }
         for(int x = 0; x < Width; x++)
         {
-            Entity wallUp = EntityManager.CreateEntity("Wall", "🪨", new Vector(x, 0));
-            Entity wallDown = EntityManager.CreateEntity("Wall", "🪨", new Vector(x, Height - 1));
+            Entity wallUp = EntityManager.CreateEntity(this, "Wall", "🪨", new Vector(x, 0));
+            Entity wallDown = EntityManager.CreateEntity(this, "Wall", "🪨", new Vector(x, Height - 1));
         }
         
         // Add some random walls
@@ -142,7 +129,7 @@ public class World
         {
             int rx = rnd.Next(1, Width - 1);
             int ry = rnd.Next(1, Height - 1);
-            Entity wall = EntityManager.CreateEntity("Wall", "🪨", new Vector(rx, ry));
+            Entity wall = EntityManager.CreateEntity(this, "Wall", "🪨", new Vector(rx, ry));
         }
     }
     

@@ -1,13 +1,14 @@
 ﻿using System.Text;
+using FantasyWar_Engine;
 
-namespace FantasyWar_Engine;
+namespace FantasyWar_Client;
 
 public class RenderSystem
 {
     private int _viewWidth;
     private int _viewHeight;
-    private const int UI_HEIGHT = 4;
-    private const int CHAT_HEIGHT = 5; // 1 separator + 3 messages + 1 input line
+    private const int UiHeight = 4;
+    private const int ChatHeight = 5; // 1 separator + 3 messages + 1 input line
 
     public RenderSystem(int viewWidth, int viewHeight)
     {
@@ -17,16 +18,16 @@ public class RenderSystem
         Console.CursorVisible = false;
     }
 
-    public void Render(World world, PlayerCamera camera, bool isChatting, string currentInput,
+    public void Render(World world, int localPlayerId, PlayerCamera camera, bool isChatting, string currentInput,
                        int safeMinX, int safeMaxX, int safeMinY, int safeMaxY, ProjectileType selectedProjectileType)
     {
         // 1. UI Buffer (Double Width for high res text)
         int uiWidth = _viewWidth * 2;
-        string[,] uiBuffer = new string[UI_HEIGHT, uiWidth];
+        string[,] uiBuffer = new string[UiHeight, uiWidth];
         InitializeBuffer(uiBuffer, " ");
 
-        Player? localPlayer = world.GetPlayer(world.LocalPlayerId);
-        DrawUI(localPlayer, uiBuffer, selectedProjectileType);
+        Player? localPlayer = world.GetPlayer(localPlayerId);
+        DrawUi(localPlayer, uiBuffer, selectedProjectileType);
 
         // 2. Game Buffer (Single Width, but content is double-width strings)
         string[,] gameBuffer = new string[_viewHeight, _viewWidth];
@@ -73,7 +74,7 @@ public class RenderSystem
 
         // 3. Chat Buffer (Double Width for high res text)
         int chatWidth = _viewWidth * 2;
-        string[,] chatBuffer = new string[CHAT_HEIGHT, chatWidth];
+        string[,] chatBuffer = new string[ChatHeight, chatWidth];
         InitializeBuffer(chatBuffer, " ");
         
         DrawChat(world, chatBuffer, isChatting, currentInput);
@@ -112,12 +113,12 @@ public class RenderSystem
         }
     }
     
-    private void DrawUI(Player? player, string[,] buffer, ProjectileType selectedProjectileType)
+    private void DrawUi(Player? player, string[,] buffer, ProjectileType selectedProjectileType)
     {
         int width = buffer.GetLength(1);
         
         // Separator line at bottom of UI
-        for (int x = 0; x < width; x++) buffer[UI_HEIGHT - 1, x] = "═";
+        for (int x = 0; x < width; x++) buffer[UiHeight - 1, x] = "═";
 
         if (player == null)
         {
@@ -191,3 +192,4 @@ public class RenderSystem
         }
     }
 }
+

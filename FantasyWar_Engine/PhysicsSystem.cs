@@ -30,15 +30,15 @@ public class PhysicsSystem
         return destroyedEntities;
     }
 
-    public static bool IsWalkable(Vector position)
+    public static bool IsWalkable(Vector position, World world)
     {
         // Map Boundary Check
-        if (position.X < 0 || position.Y < 0 || position.X >= World.Instance?.Width ||
-            position.Y >= World.Instance?.Height)
+        if (position.X < 0 || position.Y < 0 || position.X >= world.Width ||
+            position.Y >= world.Height)
             return false;
 
         // Tile Collision Check
-        if (World.Instance?.CollisionGrid[position.X, position.Y] != -1)
+        if (world.CollisionGrid[position.X, position.Y] != -1)
             return false;
 
         return true;
@@ -111,7 +111,7 @@ public class PhysicsSystem
         }
         else
         {
-            projectile.SetActorLocation(nextPos);
+            projectile.SetActorLocation(nextPos, world);
         }
     }
 }

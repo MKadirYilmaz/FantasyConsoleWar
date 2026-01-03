@@ -24,7 +24,7 @@ public class Player : Entity
         Id = -1;
         Name = "Player";
         Visual = "😀";
-        SetActorLocation(World.Instance?.GetRandomEmptyLocation() ?? new Vector(1, 1));
+        Position = new Vector(1, 1);
         Color = ConsoleColor.White;
 
         IsSolid = true;
@@ -35,7 +35,7 @@ public class Player : Entity
         Id = id;
         Name = "Player";
         Visual = "😀";
-        SetActorLocation(World.Instance?.GetRandomEmptyLocation() ?? new Vector(1, 1));
+        Position = new Vector(1, 1);
         Color = ConsoleColor.White;
 
         IsSolid = true;
@@ -44,7 +44,6 @@ public class Player : Entity
     {
         Id = id;
         Name = name;
-        SetActorLocation(position);
         Visual = visual;
         Color = color;
         

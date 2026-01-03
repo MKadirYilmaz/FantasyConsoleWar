@@ -81,7 +81,7 @@ public class ServerPackageManager
         Player? player = world.GetPlayer(packet.PlayerId);
         if (player != null && player.CanMove && player.AllowedToMove())
         {
-            if (player.SetActorLocation(packet.MovementVector))
+            if (player.SetActorLocation(packet.MovementVector, world))
                 player.OnMove();
         }
     }
@@ -98,8 +98,8 @@ public class ServerPackageManager
             // Process action based on ActionType
             Console.WriteLine($"Player {player.Name} performed action {packet.ProjectileType}");
 
-            Projectile projectile = EntityManager.CreateProjectile(packet.PlayerId, packet.Direction, 2, 100, packet.ProjectileType);
-            projectile.SetActorLocation(player.GetActorLocation() + packet.Direction);
+            Projectile projectile = EntityManager.CreateProjectile(world, packet.PlayerId, packet.Direction, 2, 100, packet.ProjectileType);
+            projectile.SetActorLocation(player.GetActorLocation() + packet.Direction, world);
             projectile.IsSolid = false;
             
             // Enqueue a packet to notify clients about the new projectile

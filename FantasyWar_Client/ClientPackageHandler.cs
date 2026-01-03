@@ -8,14 +8,14 @@ public class ClientPackageHandler
     private ConcurrentQueue<NetworkPacket> _packetQueue = new ConcurrentQueue<NetworkPacket>();
     
     public List<LobbyPlayerData> LobbyPlayers { get; private set; } = new();
-    public bool GameStarted { get; private set; } = false;
-    public bool IsGameOver { get; private set; } = false;
+    public bool GameStarted { get; private set; }
+    public bool IsGameOver { get; private set; }
     public List<LobbyPlayerData> Rankings { get; private set; } = new();
-    public bool BackToLobby { get; private set; } = false;
+    public bool BackToLobby { get; private set; }
 
-    public int SafeMinX { get; private set; } = 0;
+    public int SafeMinX { get; private set; }
     public int SafeMaxX { get; private set; } = 100;
-    public int SafeMinY { get; private set; } = 0;
+    public int SafeMinY { get; private set; }
     public int SafeMaxY { get; private set; } = 100;
 
     public event Action<int>? OnPlayerLogin;
@@ -35,24 +35,25 @@ public class ClientPackageHandler
             _packetQueue.Enqueue(packet);
     }
     
-    public void ProcessPackets(World world)
+    public void ProcessPackets(ClientGameState gameState)
     {
         while (_packetQueue.TryDequeue(out var packet))
         {
-            HandlePacket(packet, world);
+            HandlePacket(packet, gameState);
         }
     }
     
-    private void HandlePacket(NetworkPacket? packet, World world)
+    private void HandlePacket(NetworkPacket? packet, ClientGameState gameState)
     {
         if (packet == null) return;
+        World world = gameState.World;
         //Console.WriteLine($"Received: {packet.GetType().Name}");
 
         switch (packet.PacketType)
         {
             case PacketType.Login:
                 LoginPacket loginPacket = (LoginPacket)packet;
-                HandleLogin(loginPacket, world);
+                HandleLogin(loginPacket, gameState);
                 break;
             case PacketType.Movement:
                 MovementPacket movementPacket = (MovementPacket)packet;
@@ -64,7 +65,7 @@ public class ClientPackageHandler
                 break;
             case PacketType.WorldState:
                 WorldPacket worldPacket = (WorldPacket)packet;
-                HandleWorldStateUpdate(worldPacket, world);
+                HandleWorldStateUpdate(worldPacket, gameState);
                 break;
             case PacketType.SpawnOrDestroyPlayer:
                 SpawnOrDestroyPlayerPacket spawnPacket = (SpawnOrDestroyPlayerPacket)packet;
@@ -103,19 +104,20 @@ public class ClientPackageHandler
     }
     
     
-    private void HandleLogin(LoginPacket packet, World world)
+    private void HandleLogin(LoginPacket packet, ClientGameState gameState)
     {
+        World world = gameState.World;
         Console.WriteLine($"[Login] Player: {packet.PlayerName}, ID: {packet.PlayerId}");
         
         var newPlayer = new Player(packet.PlayerId, packet.PlayerName, packet.SpawnLocation);
         
-        if (world.LocalPlayerId == -1)
+        if (gameState.LocalPlayerId == -1)
         {
-            PlayerCamera camera = new PlayerCamera();
+            FantasyWar_Client.PlayerCamera camera = new FantasyWar_Client.PlayerCamera();
             camera.FollowPlayer(newPlayer.Id);
-            world.LocalCamera = camera;
+            gameState.LocalCamera = camera;
             
-            world.LocalPlayerId = packet.PlayerId;
+            gameState.LocalPlayerId = packet.PlayerId;
             newPlayer.IsLocalPlayer = true;
             
             Console.WriteLine("-> This is ME!");
@@ -125,15 +127,16 @@ public class ClientPackageHandler
         world.AddOrUpdateEntity(packet.PlayerId, newPlayer);
     }
 
-    private void HandleWorldStateUpdate(WorldPacket packet, World world)
+    private void HandleWorldStateUpdate(WorldPacket packet, ClientGameState gameState)
     {
+        World world = gameState.World;
         // 1) Upsert everything we received \-\- World.AddOrUpdateEntity updates grids consistently
         foreach (var kvp in packet.Players)
         {
             int playerId = kvp.Key;
             Player incomingPlayer = kvp.Value;
 
-            if (playerId == world.LocalPlayerId) incomingPlayer.IsLocalPlayer = true;
+            if (playerId == gameState.LocalPlayerId) incomingPlayer.IsLocalPlayer = true;
             if (!incomingPlayer.IsWaiting) incomingPlayer.IsSolid = true;
 
             world.AddOrUpdateEntity(playerId, incomingPlayer);
@@ -172,7 +175,7 @@ public class ClientPackageHandler
     {
         world.Entities.TryGetValue(packet.PlayerId, out Entity? entity);
         
-        entity?.SetActorLocation(packet.MovementVector);
+        entity?.SetActorLocation(packet.MovementVector, world);
     }
 
     private void HandleChat(ChatPacket packet, World world)

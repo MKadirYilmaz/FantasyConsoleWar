@@ -5,7 +5,7 @@ namespace FantasyWar_Client;
 public class MainMenu
 {
     private Client _client;
-    private World _world;
+    private ClientGameState _gameState;
     private ClientPackageHandler _packageHandler;
     
     private string[] _availableSkins = { "😀", "😎", "🤠", "🤡", "🤖", "👽", "👻", "👹" };
@@ -15,10 +15,10 @@ public class MainMenu
     
     private bool _isEditingName;
 
-    public MainMenu(Client client, World world, ClientPackageHandler packageHandler)
+    public MainMenu(Client client, ClientGameState gameState, ClientPackageHandler packageHandler)
     {
         _client = client;
-        _world = world;
+        _gameState = gameState;
         _packageHandler = packageHandler;
     }
 
@@ -38,9 +38,9 @@ public class MainMenu
                 break;
             }
             
-            _packageHandler.ProcessPackets(_world);
+            _packageHandler.ProcessPackets(_gameState);
 
-            Player? localPlayer = _world.GetPlayer(_world.LocalPlayerId);
+            Player? localPlayer = _gameState.World.GetPlayer(_gameState.LocalPlayerId);
             if (localPlayer != null && localPlayer.IsWaiting)
             {
                 RenderWaitingScreen();
@@ -115,13 +115,13 @@ public class MainMenu
 
     private void SendPlayerInfo()
     {
-        var packet = new UpdatePlayerInfoPacket(_world.LocalPlayerId, _playerName, _availableSkins[_currentSkinIndex]);
+        var packet = new UpdatePlayerInfoPacket(_gameState.LocalPlayerId, _playerName, _availableSkins[_currentSkinIndex]);
         _client.TcpClient.SendPacket(packet);
     }
 
     private void SendReadyStatus()
     {
-        var packet = new PlayerReadyPacket(_world.LocalPlayerId, _isReady);
+        var packet = new PlayerReadyPacket(_gameState.LocalPlayerId, _isReady);
         _client.TcpClient.SendPacket(packet);
     }
 
