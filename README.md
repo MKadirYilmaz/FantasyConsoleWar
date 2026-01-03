@@ -13,30 +13,26 @@ Players enter a 50x50 arena, choosing their unique emoji skins. As the game prog
 
 The system leverages two distinct protocols to optimize the gaming experience:
 
-* 
+
 **TCP (Transmission Control Protocol):** Manages reliable communication including lobi synchronization, player "Ready" status, chat messages, and game-over rankings.
 
 
-* 
 **UDP (User Datagram Protocol):** Handles high-frequency, time-sensitive data such as player coordinates, projectile movement, and real-time safe-zone boundaries to ensure minimal latency.
 
 
 
 ### Core Systems
 
-* 
+
 **Authoritative Server:** The server maintains the "source of truth" for all physics, collision detection, and health management at a target rate of 60 FPS.
 
 
-* 
 **JSON Serialization:** Data is exchanged using a polymorphic packet system built on `System.Text.Json`, allowing for flexible and extensible network messages .
 
 
-* 
 **Physics & Collision:** A dedicated physics engine calculates projectile trajectories and handles overlaps between solid entities and world boundaries .
 
 
-* 
 **Ability System:** Includes four distinct projectile types (Physical, Electric, Fire, Ice), each with unique cooldowns and status effects like burning or freezing .
 
 
@@ -82,39 +78,32 @@ Enter the server's IP address when prompted (use `127.0.0.1` for local testing).
 
 ## ⌨️ Controls
 
-* 
 **Movement:** `W`, `A`, `S`, `D` .
 
 
-* 
 **Attack:** `Spacebar` (Shoots in the direction of last movement) .
 
 
-* 
 **Select Ability:** `Num1` to `Num4` (Switch between Physical, Electric, Fire, and Ice projectiles) .
 
 
-* 
 **Chat:** Press `T` to open chat, type your message, and press `Enter` to send .
 
 
-* 
 **Lobby:** Press `N` to change your name, use `Left/Right Arrows` to change your skin, and press `R` to toggle ready status .
 
 
 
 ## 📁 Project Structure
 
-* 
-`FantasyWar_Server/`: Contains game logic, lobi management, and the packet processing engine .
+
+* `FantasyWar_Server/`: Contains game logic, lobi management, and the packet processing engine .
 
 
-* 
-`FantasyWar_Client/`: Includes the camera system, rendering engine, and input handlers .
+* `FantasyWar_Client/`: Includes the camera system, rendering engine, and input handlers .
 
 
-* 
-`FantasyWar_Engine/`: Shared library containing the network wrappers, physics system, and packet definitions .
+* `FantasyWar_Engine/`: Shared library containing the network wrappers, physics system, and packet definitions .
 
 
 
