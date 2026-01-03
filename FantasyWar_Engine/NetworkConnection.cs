@@ -185,7 +185,7 @@ public class UdpListener
         socket.Bind(new IPEndPoint(IPAddress.Any, port));
         
         Port = ((IPEndPoint)socket.LocalEndPoint!).Port;
-        
+
         _udpClient = new UdpClient { Client = socket };
         _udpClient.EnableBroadcast = true;
         _cts = new CancellationTokenSource();

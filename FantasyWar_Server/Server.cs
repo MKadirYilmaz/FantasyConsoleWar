@@ -127,7 +127,7 @@ public class TcpGameServer
                 }
             }
         };
-        
+
         Console.WriteLine($"New player {spawnedPlayer.Id} has joined the game. (Waiting: {spawnedPlayer.IsWaiting})");
         
         LoginPacket loginPacket = new LoginPacket(spawnedPlayer.Name, spawnedPlayer.Id, spawnedPlayer.GetActorLocation());

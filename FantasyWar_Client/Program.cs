@@ -40,6 +40,41 @@ class Program
             // Reset state for new game cycle
             packageHandler.Reset();
             
+            // Clear projectiles and fix ghost images
+            var projectiles = gameWorld.Entities.Values.OfType<Projectile>().ToList();
+            foreach (var proj in projectiles)
+            {
+                gameWorld.RemoveEntity(proj.Id);
+            }
+
+            // Scan grid for any lingering projectile references or ghosts (desync fix)
+            for (int x = 0; x < gameWorld.Width; x++)
+            {
+                for (int y = 0; y < gameWorld.Height; y++)
+                {
+                    int id = gameWorld.RenderGrid[x, y];
+                    if (id != -1)
+                    {
+                        if (!gameWorld.Entities.ContainsKey(id))
+                        {
+                            // Ghost ID in grid (entity removed but grid not cleared)
+                            gameWorld.RenderGrid[x, y] = -1;
+                            gameWorld.CollisionGrid[x, y] = -1;
+                        }
+                        else if (gameWorld.Entities[id] is Projectile)
+                        {
+                            // Projectile still in entities (should have been removed)
+                            gameWorld.RemoveEntity(id);
+                            gameWorld.RenderGrid[x, y] = -1;
+                            gameWorld.CollisionGrid[x, y] = -1;
+                        }
+                    }
+                }
+            }
+            
+            // Clear chat messages
+            gameWorld.ChatMessages.Clear();
+            
             // Start Main Menu
             MainMenu mainMenu = new MainMenu(_client, gameWorld, packageHandler);
             mainMenu.Run();
