@@ -116,3 +116,8 @@ AI assistance (Gemini/Claude) was utilized during development for:
 
 
 * Implementing thread-safe packet queuing using `ConcurrentQueue`.
+
+
+## Video Presentation
+
+https://youtu.be/G2k949aGSHM?si=1ViPkZwj1fI82ktk
