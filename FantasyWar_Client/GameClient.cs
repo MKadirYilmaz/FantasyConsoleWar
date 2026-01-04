@@ -208,13 +208,25 @@ public class GameClient
             case ConsoleKey.NumPad1:
                 _projectileType = ProjectileType.Physical;
                 break;
+            case ConsoleKey.D1:
+                _projectileType = ProjectileType.Physical;
+                break;
             case ConsoleKey.NumPad2:
+                _projectileType = ProjectileType.Electric;
+                break;
+            case ConsoleKey.D2:
                 _projectileType = ProjectileType.Electric;
                 break;
             case ConsoleKey.NumPad3:
                 _projectileType = ProjectileType.Fire;
                 break;
+            case ConsoleKey.D3:
+                _projectileType = ProjectileType.Fire;
+                break;
             case ConsoleKey.NumPad4:
+                _projectileType = ProjectileType.Ice;
+                break;
+            case ConsoleKey.D4:
                 _projectileType = ProjectileType.Ice;
                 break;
             case ConsoleKey.Spacebar:
